@@ -1,0 +1,6 @@
+{
+  "name": "SmartScan AI",
+  "description": "Professional Android Document Scanner, PDF manager, OCR extractor and Barcode scanner powered by Material Design 3 and Google ML Kit.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
