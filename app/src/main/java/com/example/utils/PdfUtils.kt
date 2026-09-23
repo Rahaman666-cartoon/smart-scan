@@ -1,13 +1,13 @@
 package com.example.utils
 
 import android.graphics.Bitmap
-import com.tomroush.pdfbox.pdmodel.PDDocument
-import com.tomroush.pdfbox.pdmodel.PDPage
-import com.tomroush.pdfbox.pdmodel.PDPageContentStream
-import com.tomroush.pdfbox.pdmodel.common.PDRectangle
-import com.tomroush.pdfbox.pdmodel.graphics.image.JPEGFactory
-import com.tomroush.pdfbox.multipdf.PDFMergerUtility
-import com.tomroush.pdfbox.multipdf.Splitter
+import com.tom_roush.pdfbox.multipdf.PDFMergerUtility
+import com.tom_roush.pdfbox.multipdf.Splitter
+import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.pdmodel.PDPage
+import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
+import com.tom_roush.pdfbox.pdmodel.common.PDRectangle
+import com.tom_roush.pdfbox.pdmodel.graphics.image.JPEGFactory
 import java.io.File
 import java.io.FileOutputStream
 
