@@ -6,8 +6,8 @@ import com.tomroush.pdfbox.pdmodel.PDPage
 import com.tomroush.pdfbox.pdmodel.PDPageContentStream
 import com.tomroush.pdfbox.pdmodel.common.PDRectangle
 import com.tomroush.pdfbox.pdmodel.graphics.image.JPEGFactory
-import org.apache.pdfbox.multipdf.PDFMergerUtility
-import org.apache.pdfbox.multipdf.Splitter
+import com.tomroush.pdfbox.multipdf.PDFMergerUtility
+import com.tomroush.pdfbox.multipdf.Splitter
 import java.io.File
 import java.io.FileOutputStream
 
