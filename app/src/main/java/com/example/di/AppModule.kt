@@ -31,7 +31,7 @@ object AppModule {
 
     @Provides
     fun provideDocumentDao(appDatabase: AppDatabase): DocumentDao {
-        return appDatabase.documentDao()
+        return appDatabase.documentDao
     }
 
     @Provides

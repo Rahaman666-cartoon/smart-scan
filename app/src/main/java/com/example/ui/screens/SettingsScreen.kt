@@ -239,6 +239,6 @@ private fun SettingsSectionTitle(title: String) {
         style = MaterialTheme.typography.labelLarge,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium, bottom = MaterialTheme.spacing.small)
+        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium).padding(bottom = MaterialTheme.spacing.small)
     )
 }

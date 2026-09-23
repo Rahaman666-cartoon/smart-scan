@@ -20,6 +20,7 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -414,6 +415,7 @@ fun PerspectiveCropScreen(
                     ImageUtils.applyFilter(currentBitmap, selectedFilter)
                 }
 
+                val primaryColor = MaterialTheme.colorScheme.primary
                 Box(
                     modifier = Modifier
                         .size(imageWidthDp, imageHeightDp)
@@ -435,7 +437,7 @@ fun PerspectiveCropScreen(
                         }
                         drawPath(
                             path = path,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = primaryColor,
                             style = Stroke(width = 4.dp.toPx())
                         )
                     }
