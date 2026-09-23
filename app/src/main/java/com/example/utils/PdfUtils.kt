@@ -69,13 +69,16 @@ object PdfUtils {
         try {
             document = PDDocument.load(inputFile)
             val splitter = Splitter()
-            val splitDocuments = splitter.split(document)
+            @Suppress("UNCHECKED_CAST")
+            val splitDocuments = splitter.split(document) as List<PDDocument>
             
-            for ((index, splitDoc) in splitDocuments.withIndex()) {
+            var index = 0
+            for (splitDoc in splitDocuments) {
                 val outputFile = File(outputDirectory, "${baseName}_page_${index + 1}.pdf")
                 splitDoc.save(outputFile)
                 splitDoc.close()
                 resultFiles.add(outputFile)
+                index++
             }
         } catch (e: Exception) {
             e.printStackTrace()
