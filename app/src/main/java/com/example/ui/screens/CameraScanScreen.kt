@@ -474,6 +474,7 @@ fun PerspectiveCropScreen(
                         modifier = Modifier.fillMaxSize()
                     )
 
+                    val primaryColor = MaterialTheme.colorScheme.primary
                     if (!showOriginal) {
                         Canvas(modifier = Modifier.fillMaxSize()) {
                             val path = Path().apply {
@@ -485,7 +486,7 @@ fun PerspectiveCropScreen(
                             }
                             drawPath(
                                 path = path,
-                                color = MaterialTheme.colorScheme.primary,
+                                color = primaryColor,
                                 style = Stroke(width = 3.dp.toPx())
                             )
                         }
@@ -608,7 +609,7 @@ fun PerspectiveCropScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
                 ) {
-                    items(ImageUtils.FilterType.values()) { filter ->
+                    items(ImageUtils.FilterType.values().toList()) { filter ->
                         FilterChip(
                             selected = selectedFilter == filter,
                             onClick = { selectedFilter = filter },
