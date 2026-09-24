@@ -6,7 +6,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,18 +20,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.data.DocumentEntity
 import com.example.ui.MainViewModel
-import com.example.ui.theme.spacing
 import com.example.utils.formatSize
 import com.example.utils.getBarcodeFormatName
 import kotlinx.coroutines.Dispatchers
@@ -60,7 +60,7 @@ fun HomeScreen(
     var showSaveDialog by remember { mutableStateOf(false) }
     var documentNameInput by remember { mutableStateOf("") }
     var searchQuery by remember { mutableStateOf("") }
-    val dateFormatter = remember { SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()) }
+    val dateFormatter = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -76,311 +76,311 @@ fun HomeScreen(
                     if (bitmap != null) {
                         onNavigateToCrop(bitmap)
                     }
-                } catch (e: Exception) {
-                    // Handled error silently or via ViewModel message
-                }
+                } catch (e: Exception) {}
             }
         }
     }
 
+    // A beautiful gradient brush for the header
+    val headerGradient = Brush.verticalGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.primary,
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+        )
+    )
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .testTag("home_screen_column"),
-        contentPadding = PaddingValues(bottom = MaterialTheme.spacing.massive)
+            .background(Color(0xFFF8F9FA))
     ) {
-        // App Bar / Header
+        // --- 1. Stunning Header ---
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(headerGradient)
+                    .padding(horizontal = 24.dp, vertical = 40.dp)
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Good Morning,",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White.copy(alpha = 0.8f)
+                            )
+                            Text(
+                                text = "Ready to scan?",
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White
+                            )
+                        }
+                        // Premium Profile Avatar
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.2f))
+                                .clickable { /* profile */ },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.AccountCircle,
+                                contentDescription = "Profile",
+                                tint = Color.White,
+                                modifier = Modifier.size(36.dp)
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(32.dp))
+                    
+                    // Glassmorphism Search Bar
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("Search your documents...", color = Color.White.copy(alpha=0.8f)) },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.White) },
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color.White.copy(alpha = 0.2f),
+                            unfocusedContainerColor = Color.White.copy(alpha = 0.15f),
+                            focusedBorderColor = Color.White,
+                            unfocusedBorderColor = Color.Transparent,
+                            cursorColor = Color.White,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+
+        // --- 2. Floating Action Grid ---
         item {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(
-                        top = MaterialTheme.spacing.large,
-                        start = MaterialTheme.spacing.medium,
-                        end = MaterialTheme.spacing.medium,
-                        bottom = MaterialTheme.spacing.small
-                    )
+                    .offset(y = (-20).dp)
+                    .padding(horizontal = 16.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text(
-                        text = "SmartScan AI",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    IconButton(
-                        onClick = { /* profile */ },
+                    // Massive Scan Card
+                    Card(
                         modifier = Modifier
-                            .size(48.dp)
-                            .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                            .weight(1f)
+                            .height(160.dp)
+                            .shadow(16.dp, RoundedCornerShape(24.dp), spotColor = MaterialTheme.colorScheme.primary)
+                            .clip(RoundedCornerShape(24.dp))
+                            .clickable { onNavigateToCamera() },
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
                     ) {
-                        Icon(
-                            Icons.Default.AccountCircle,
-                            contentDescription = "Profile",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
-
-                // Search Bar
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text("Search your documents...") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color.Transparent,
-                        cursorColor = MaterialTheme.colorScheme.primary
-                    ),
-                    shape = RoundedCornerShape(24.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
-
-        // Action Grid
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.small),
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
-            ) {
-                // Scan Document Card
-                Card(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(140.dp)
-                        .clickable { onNavigateToCamera() }
-                        .testTag("quick_scan_card"),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                    shape = RoundedCornerShape(24.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(MaterialTheme.spacing.medium),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(56.dp)
-                                .background(MaterialTheme.colorScheme.primary, CircleShape),
-                            contentAlignment = Alignment.Center
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Icon(
-                                Icons.Default.CameraAlt,
-                                contentDescription = "Scan Document",
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(28.dp)
+                            Box(
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.DocumentScanner,
+                                    contentDescription = "Scan Document",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                "Smart Scan",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1E1E1E)
+                            )
+                            Text(
+                                "Auto-detect edges",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
                             )
                         }
-                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
-                        Text(
-                            "Scan Doc",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
                     }
-                }
 
-                // Import Card
-                Card(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(140.dp)
-                        .clickable { galleryLauncher.launch("image/*") }
-                        .testTag("gallery_import_card"),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                    shape = RoundedCornerShape(24.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
+                    // Secondary Tools Stack
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(MaterialTheme.spacing.medium),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        modifier = Modifier.weight(1f).height(160.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Box(
+                        // Import Image
+                        Card(
                             modifier = Modifier
-                                .size(56.dp)
-                                .background(MaterialTheme.colorScheme.secondary, CircleShape),
-                            contentAlignment = Alignment.Center
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha=0.05f))
+                                .clip(RoundedCornerShape(20.dp))
+                                .clickable { galleryLauncher.launch("image/*") },
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
-                            Icon(
-                                Icons.Default.Image,
-                                contentDescription = "Import Image",
-                                tint = MaterialTheme.colorScheme.onSecondary,
-                                modifier = Modifier.size(28.dp)
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(Color(0xFFE8F5E9), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.Image, contentDescription = null, tint = Color(0xFF43A047))
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text("Import Image", fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                            }
                         }
-                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
-                        Text(
-                            "Import",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
+
+                        // Merge PDF
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha=0.05f))
+                                .clip(RoundedCornerShape(20.dp))
+                                .clickable { onNavigateToMerge() },
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(Color(0xFFFFF3E0), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = Color(0xFFF57C00))
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text("Merge PDFs", fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                            }
+                        }
                     }
                 }
-            }
-        }
-
-        // Secondary Tools (Merge, QR)
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.small),
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
-            ) {
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { onNavigateToMerge() },
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(16.dp),
-                    border = borderStroke()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(MaterialTheme.spacing.medium),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
-                        Text("Merge PDF", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
-                    }
-                }
-
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { onNavigateToBarcode() },
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(16.dp),
-                    border = borderStroke()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(MaterialTheme.spacing.medium),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
-                        Text("QR / Barcode", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
-                    }
-                }
-            }
-        }
-
-        // Active Session
-        if (scannedPages.isNotEmpty()) {
-            item {
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // QR Code Standalone
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(MaterialTheme.spacing.medium),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = borderStroke(),
-                    shape = RoundedCornerShape(16.dp)
+                        .height(72.dp)
+                        .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha=0.05f))
+                        .clip(RoundedCornerShape(20.dp))
+                        .clickable { onNavigateToBarcode() },
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
-                    Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    "Active Scan Session",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    "${scannedPages.size} Page(s) scanned",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                    Row(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(Color(0xFFF3E5F5), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = Color(0xFF8E24AA))
                             }
-                            IconButton(onClick = { viewModel.clearActiveSession() }) {
-                                Icon(Icons.Default.DeleteSweep, contentDescription = "Clear Session", tint = MaterialTheme.colorScheme.error)
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text("QR / Barcode", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E1E1E))
+                                Text("Scan any code instantly", fontSize = 12.sp, color = Color.Gray)
                             }
                         }
+                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
+                    }
+                }
+            }
+        }
 
-                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+        // --- Active Session ---
+        if (scannedPages.isNotEmpty()) {
+            item {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        "Active Session",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1E1E1E),
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                    Card(
+                        modifier = Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(20.dp)),
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    "${scannedPages.size} Page(s) scanned",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                IconButton(onClick = { viewModel.clearActiveSession() }) {
+                                    Icon(Icons.Default.DeleteSweep, contentDescription = "Clear", tint = MaterialTheme.colorScheme.error)
+                                }
+                            }
 
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            items(scannedPages.size) { index ->
-                                Box(
-                                    modifier = Modifier
-                                        .size(80.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                ) {
-                                    Image(
-                                        bitmap = scannedPages[index].asImageBitmap(),
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                    IconButton(
-                                        onClick = { viewModel.removeScannedPage(index) },
-                                        modifier = Modifier
-                                            .size(24.dp)
-                                            .align(Alignment.TopEnd)
-                                            .background(Color.Black.copy(alpha = 0.6f), CircleShape)
-                                            .padding(2.dp)
-                                    ) {
-                                        Icon(Icons.Default.Close, contentDescription = "Remove", tint = Color.White)
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(vertical = 12.dp)) {
+                                items(scannedPages.size) { index ->
+                                    Box(modifier = Modifier.size(90.dp).clip(RoundedCornerShape(12.dp))) {
+                                        Image(
+                                            bitmap = scannedPages[index].asImageBitmap(),
+                                            contentDescription = null,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                        IconButton(
+                                            onClick = { viewModel.removeScannedPage(index) },
+                                            modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(24.dp).background(Color.Black.copy(0.5f), CircleShape)
+                                        ) {
+                                            Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.padding(4.dp))
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
-                        ) {
-                            OutlinedButton(
-                                onClick = { onNavigateToCamera() },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(MaterialTheme.spacing.extraSmall))
-                                Text("Add Page")
-                            }
-
-                            Button(
-                                onClick = {
-                                    documentNameInput = "Scan_${System.currentTimeMillis() / 1000}"
-                                    showSaveDialog = true
-                                },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(MaterialTheme.spacing.extraSmall))
-                                Text("Save & OCR")
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                OutlinedButton(onClick = { onNavigateToCamera() }, modifier = Modifier.weight(1f)) {
+                                    Text("Add Page")
+                                }
+                                Button(
+                                    onClick = {
+                                        documentNameInput = "Scan_${System.currentTimeMillis() / 1000}"
+                                        showSaveDialog = true
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Save & OCR")
+                                }
                             }
                         }
                     }
@@ -388,19 +388,28 @@ fun HomeScreen(
             }
         }
 
-        // Recent Documents
+        // --- 3. Recent Documents (Sleek List) ---
         item {
-            Text(
-                text = "Recent Documents",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(
-                    start = MaterialTheme.spacing.medium,
-                    top = MaterialTheme.spacing.large,
-                    bottom = MaterialTheme.spacing.small
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Recent Scans",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1E1E1E)
                 )
-            )
+                Text(
+                    text = "See All",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable { /* navigate to library */ }
+                )
+            }
         }
 
         val filteredDocs = if (searchQuery.isBlank()) documents else documents.filter { it.name.contains(searchQuery, ignoreCase = true) }
@@ -410,26 +419,21 @@ fun HomeScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(MaterialTheme.spacing.massive),
+                        .padding(40.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Icon(
-                        Icons.Default.ContentPasteSearch,
+                        Icons.Default.FolderOpen,
                         contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        modifier = Modifier.size(80.dp),
+                        tint = Color.LightGray
                     )
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        if (searchQuery.isBlank()) "No documents yet" else "No results found",
+                        if (searchQuery.isBlank()) "No scans yet" else "No results found",
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        if (searchQuery.isBlank()) "Start scanning to see them here" else "Try a different search term",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray
                     )
                 }
             }
@@ -439,47 +443,49 @@ fun HomeScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.extraSmall)
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                        .clip(RoundedCornerShape(16.dp))
                         .clickable { onNavigateToDocument(doc) },
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = borderStroke(),
-                    shape = RoundedCornerShape(16.dp)
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(MaterialTheme.spacing.medium),
+                            .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Surface(
-                            modifier = Modifier.size(48.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer
+                        // PDF Icon/Thumbnail
+                        Box(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .background(Color(0xFFFFEBEE), RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                Icons.Default.Description,
+                                Icons.Default.PictureAsPdf,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.padding(12.dp)
+                                tint = Color(0xFFD32F2F),
+                                modifier = Modifier.size(28.dp)
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.medium))
+                        Spacer(modifier = Modifier.width(16.dp))
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = doc.name,
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1E1E1E),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
-                            Spacer(modifier = Modifier.height(2.dp))
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "${doc.pageCount} Pages • ${formatSize(doc.pdfSize)} • ${dateFormatter.format(Date(doc.createdTime))}",
+                                text = "${dateFormatter.format(Date(doc.createdTime))}  •  ${formatSize(doc.pdfSize)}",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = Color.Gray
                             )
                         }
 
@@ -487,42 +493,39 @@ fun HomeScreen(
                             Icon(
                                 imageVector = if (doc.isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
                                 contentDescription = "Favorite",
-                                tint = if (doc.isFavorite) Color(0xFFFFC107) else MaterialTheme.colorScheme.onSurfaceVariant
+                                tint = if (doc.isFavorite) Color(0xFFFFC107) else Color.LightGray
                             )
                         }
                     }
                 }
             }
+            item { Spacer(modifier = Modifier.height(100.dp)) } // padding for bottom nav
         }
     }
 
+    // Dialogs...
     if (showSaveDialog) {
         AlertDialog(
             onDismissRequest = { showSaveDialog = false },
-            title = { Text("Save Document") },
+            title = { Text("Save Document", fontWeight = FontWeight.Bold) },
             text = {
                 OutlinedTextField(
                     value = documentNameInput,
                     onValueChange = { documentNameInput = it },
                     label = { Text("Document Name") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
                 )
             },
             confirmButton = {
-                Button(
-                    onClick = {
-                        viewModel.compileActiveSession(context, documentNameInput)
-                        showSaveDialog = false
-                    }
-                ) {
-                    Text("Save & Process OCR")
-                }
+                Button(onClick = {
+                    viewModel.compileActiveSession(context, documentNameInput)
+                    showSaveDialog = false
+                }) { Text("Save & OCR") }
             },
             dismissButton = {
-                TextButton(onClick = { showSaveDialog = false }) {
-                    Text("Cancel")
-                }
+                TextButton(onClick = { showSaveDialog = false }) { Text("Cancel") }
             }
         )
     }
@@ -533,29 +536,23 @@ fun HomeScreen(
             title = { Text("Barcode Scanned") },
             text = {
                 Column {
-                    Text("Format: ${getBarcodeFormatName(barcodeResult!!.format)}")
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+                    Text("Format: ${getBarcodeFormatName(barcodeResult!!.format)}", fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
                             text = barcodeResult!!.rawValue,
-                            modifier = Modifier.padding(MaterialTheme.spacing.medium),
-                            style = MaterialTheme.typography.bodyMedium
+                            modifier = Modifier.padding(16.dp)
                         )
                     }
                 }
             },
             confirmButton = {
-                Button(onClick = { viewModel.clearBarcodeResult() }) {
-                    Text("Done")
-                }
+                Button(onClick = { viewModel.clearBarcodeResult() }) { Text("Done") }
             }
         )
     }
 }
-
-@Composable
-fun borderStroke() = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)

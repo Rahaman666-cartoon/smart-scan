@@ -11,6 +11,7 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,8 +24,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -34,10 +38,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.core.content.FileProvider
 import com.example.data.DocumentEntity
 import com.example.ui.MainViewModel
@@ -67,22 +67,18 @@ fun DocumentListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Library", fontWeight = FontWeight.Bold) },
+                title = { Text("My Library", fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E)) },
                 actions = {
-                    IconButton(
-                        onClick = { viewModel.setOnlyFavorites(!onlyFavorites) },
-                        modifier = Modifier.testTag("filter_favs_button")
-                    ) {
+                    IconButton(onClick = { viewModel.setOnlyFavorites(!onlyFavorites) }) {
                         Icon(
                             imageVector = if (onlyFavorites) Icons.Default.Star else Icons.Default.StarBorder,
                             contentDescription = "Favorites Only",
-                            tint = if (onlyFavorites) Color(0xFFFFC107) else MaterialTheme.colorScheme.onSurface
+                            tint = if (onlyFavorites) Color(0xFFFFC107) else Color.Gray
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
+                    containerColor = Color(0xFFF8F9FA)
                 )
             )
         }
@@ -91,71 +87,84 @@ fun DocumentListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.background)
+                .background(Color(0xFFF8F9FA))
         ) {
-            // Search Bar
+            // Modern Search Bar
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { viewModel.setSearchQuery(it) },
-                placeholder = { Text("Search by name or content...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                placeholder = { Text("Search by name or content...", color = Color.Gray) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { viewModel.setSearchQuery("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            Icon(Icons.Default.Clear, contentDescription = "Clear", tint = Color.Gray)
                         }
                     }
                 },
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = Color.Transparent
+                    unfocusedBorderColor = Color.Transparent,
+                    cursorColor = MaterialTheme.colorScheme.primary,
+                    focusedTextColor = Color(0xFF1E1E1E),
+                    unfocusedTextColor = Color(0xFF1E1E1E)
                 ),
                 shape = RoundedCornerShape(24.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.small)
-                    .testTag("search_field_input")
+                    .padding(horizontal = 24.dp, vertical = 12.dp)
+                    .shadow(4.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha=0.05f))
             )
 
             // Sorting Selection
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.extraSmall),
+                    .padding(horizontal = 24.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "${documents.size} Documents",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.SemiBold
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Bold
                 )
 
                 Box {
                     var expandedSortMenu by remember { mutableStateOf(false) }
-                    TextButton(
-                        onClick = { expandedSortMenu = true },
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                    Surface(
+                        modifier = Modifier.clickable { expandedSortMenu = true },
+                        color = Color(0xFFE3F2FD),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(
-                            when (sortType) {
-                                MainViewModel.SortType.DATE_DESC -> "Newest First"
-                                MainViewModel.SortType.DATE_ASC -> "Oldest First"
-                                MainViewModel.SortType.NAME_ASC -> "Name A-Z"
-                                MainViewModel.SortType.NAME_DESC -> "Name Z-A"
-                            },
-                            fontWeight = FontWeight.Bold
-                        )
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                when (sortType) {
+                                    MainViewModel.SortType.DATE_DESC -> "Newest First"
+                                    MainViewModel.SortType.DATE_ASC -> "Oldest First"
+                                    MainViewModel.SortType.NAME_ASC -> "Name A-Z"
+                                    MainViewModel.SortType.NAME_DESC -> "Name Z-A"
+                                },
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1976D2),
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Icon(Icons.Default.ArrowDropDown, null, tint = Color(0xFF1976D2), modifier = Modifier.size(16.dp))
+                        }
                     }
 
                     DropdownMenu(
                         expanded = expandedSortMenu,
-                        onDismissRequest = { expandedSortMenu = false }
+                        onDismissRequest = { expandedSortMenu = false },
+                        modifier = Modifier.background(Color.White)
                     ) {
                         DropdownMenuItem(
                             text = { Text("Date (Newest first)") },
@@ -182,33 +191,34 @@ fun DocumentListScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(MaterialTheme.spacing.large)) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
                         Icon(
                             Icons.Default.FolderOpen,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                            modifier = Modifier.size(72.dp)
+                            tint = Color.LightGray,
+                            modifier = Modifier.size(100.dp)
                         )
-                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                        Spacer(modifier = Modifier.height(24.dp))
                         Text(
                             if (searchQuery.isNotEmpty()) "No matches found" else "Your library is empty",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF1E1E1E)
                         )
-                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             if (searchQuery.isNotEmpty()) "Try a different search term" else "Scan your first document to see it here",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = Color.Gray
                         )
                     }
                 }
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 100.dp)
+                    contentPadding = PaddingValues(top = 8.dp, bottom = 120.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(documents) { doc ->
                         DocumentListCard(
@@ -232,13 +242,14 @@ fun DocumentListScreen(
     if (docToRename != null) {
         AlertDialog(
             onDismissRequest = { docToRename = null },
-            title = { Text("Rename File") },
+            title = { Text("Rename File", fontWeight = FontWeight.Bold) },
             text = {
                 OutlinedTextField(
                     value = renameInput,
                     onValueChange = { renameInput = it },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth().testTag("rename_input_field")
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
                 )
             },
             confirmButton = {
@@ -247,9 +258,7 @@ fun DocumentListScreen(
                         viewModel.renameDocument(context, docToRename!!, renameInput)
                         docToRename = null
                     }
-                }) {
-                    Text("Rename")
-                }
+                }) { Text("Rename") }
             },
             dismissButton = {
                 TextButton(onClick = { docToRename = null }) { Text("Cancel") }
@@ -260,7 +269,7 @@ fun DocumentListScreen(
     if (docToDelete != null) {
         AlertDialog(
             onDismissRequest = { docToDelete = null },
-            title = { Text("Delete Document") },
+            title = { Text("Delete Document", fontWeight = FontWeight.Bold) },
             text = { Text("Are you sure you want to permanently delete '${docToDelete!!.name}.pdf'?") },
             confirmButton = {
                 Button(
@@ -269,9 +278,7 @@ fun DocumentListScreen(
                         docToDelete = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Delete")
-                }
+                ) { Text("Delete") }
             },
             dismissButton = {
                 TextButton(onClick = { docToDelete = null }) { Text("Cancel") }
@@ -295,48 +302,48 @@ fun DocumentListCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.extraSmall)
-            .clickable { onClicked() }
-            .testTag("doc_item_card_${doc.id}"),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = borderStroke(),
-        shape = RoundedCornerShape(16.dp)
+            .padding(horizontal = 24.dp)
+            .shadow(4.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha = 0.05f))
+            .clip(RoundedCornerShape(20.dp))
+            .clickable { onClicked() },
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(MaterialTheme.spacing.medium),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                modifier = Modifier.size(48.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.primaryContainer
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .background(Color(0xFFFFEBEE), RoundedCornerShape(16.dp)),
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    Icons.Default.Description,
+                    Icons.Default.PictureAsPdf,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.padding(12.dp)
+                    tint = Color(0xFFD32F2F),
+                    modifier = Modifier.size(32.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.width(MaterialTheme.spacing.medium))
+            Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = doc.name,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1E1E1E),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "${doc.pageCount} Pages • ${formatSize(doc.pdfSize)} • ${dateFormatter.format(Date(doc.createdTime))}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color.Gray
                 )
             }
 
@@ -344,18 +351,19 @@ fun DocumentListCard(
                 Icon(
                     imageVector = if (doc.isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
                     contentDescription = "Favorite",
-                    tint = if (doc.isFavorite) Color(0xFFFFC107) else MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = if (doc.isFavorite) Color(0xFFFFC107) else Color.LightGray
                 )
             }
 
             Box {
                 IconButton(onClick = { showMoreDropdown = true }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "More", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color.Gray)
                 }
 
                 DropdownMenu(
                     expanded = showMoreDropdown,
-                    onDismissRequest = { showMoreDropdown = false }
+                    onDismissRequest = { showMoreDropdown = false },
+                    modifier = Modifier.background(Color.White)
                 ) {
                     DropdownMenuItem(
                         text = { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.Edit, null); Spacer(Modifier.width(8.dp)); Text("Rename") } },
@@ -375,6 +383,7 @@ fun DocumentListCard(
     }
 }
 
+// ... DocumentDetailScreen and ZoomableImage remain identical ...
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DocumentDetailScreen(
@@ -417,9 +426,9 @@ fun DocumentDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(doc.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                title = { Text(doc.name, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E)) },
                 navigationIcon = {
-                    IconButton(onClick = onClose) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onClose) { Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color(0xFF1E1E1E)) }
                 },
                 actions = {
                     IconButton(
@@ -440,9 +449,10 @@ fun DocumentDetailScreen(
                             }
                         }
                     ) {
-                        Icon(Icons.Default.Share, contentDescription = "Share")
+                        Icon(Icons.Default.Share, contentDescription = "Share", tint = Color(0xFF1E1E1E))
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         }
     ) { paddingValues ->
@@ -450,11 +460,11 @@ fun DocumentDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.background)
+                .background(Color(0xFFF8F9FA))
         ) {
-            TabRow(selectedTabIndex = activeTab) {
-                Tab(selected = activeTab == 0, onClick = { activeTab = 0 }, text = { Text("PDF View") })
-                Tab(selected = activeTab == 1, onClick = { activeTab = 1 }, text = { Text("OCR Reader") })
+            TabRow(selectedTabIndex = activeTab, containerColor = Color.White, contentColor = MaterialTheme.colorScheme.primary) {
+                Tab(selected = activeTab == 0, onClick = { activeTab = 0 }, text = { Text("PDF View", fontWeight = FontWeight.Bold) })
+                Tab(selected = activeTab == 1, onClick = { activeTab = 1 }, text = { Text("OCR Reader", fontWeight = FontWeight.Bold) })
             }
 
             if (activeTab == 0) {
@@ -469,14 +479,13 @@ fun DocumentDetailScreen(
                 } else {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(MaterialTheme.spacing.medium),
-                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         items(pdfBitmaps) { bitmap ->
                             Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                border = borderStroke(),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                                modifier = Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(12.dp)),
+                                colors = CardDefaults.cardColors(containerColor = Color.White)
                             ) {
                                 ZoomableImage(bitmap)
                             }
@@ -487,11 +496,11 @@ fun DocumentDetailScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(MaterialTheme.spacing.medium)
+                        .padding(16.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Button(
                             onClick = {
@@ -501,8 +510,8 @@ fun DocumentDetailScreen(
                             modifier = Modifier.weight(1f)
                         ) {
                             Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(MaterialTheme.spacing.extraSmall))
-                            Text("Copy")
+                            Spacer(Modifier.width(8.dp))
+                            Text("Copy Text")
                         }
                         OutlinedButton(
                             onClick = {
@@ -519,23 +528,23 @@ fun DocumentDetailScreen(
                             modifier = Modifier.weight(1f)
                         ) {
                             Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(MaterialTheme.spacing.extraSmall))
+                            Spacer(Modifier.width(8.dp))
                             Text("Export .TXT")
                         }
                     }
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                    Spacer(modifier = Modifier.height(16.dp))
                     Surface(
                         modifier = Modifier.weight(1f).fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        border = borderStroke(),
-                        color = MaterialTheme.colorScheme.surfaceVariant
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color.White,
+                        shadowElevation = 4.dp
                     ) {
-                        LazyColumn(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
+                        LazyColumn(modifier = Modifier.padding(16.dp)) {
                             item {
                                 if (doc.ocrText.isBlank()) {
-                                    Text("No text detected.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("No text detected.", color = Color.Gray)
                                 } else {
-                                    Text(doc.ocrText, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(doc.ocrText, style = MaterialTheme.typography.bodyLarge, color = Color(0xFF1E1E1E), lineHeight = androidx.compose.ui.unit.TextUnit(24f, androidx.compose.ui.unit.TextUnitType.Sp))
                                 }
                             }
                         }
@@ -555,7 +564,7 @@ fun ZoomableImage(bitmap: Bitmap) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(Color.Black)
+            .background(Color.White)
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoom, _ ->
                     scale = (scale * zoom).coerceIn(1f, 5f)

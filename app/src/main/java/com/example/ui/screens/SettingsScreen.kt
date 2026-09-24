@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -33,10 +34,9 @@ fun SettingsScreen(viewModel: MainViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings", fontWeight = FontWeight.Bold) },
+                title = { Text("Settings", fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E)) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
+                    containerColor = Color(0xFFF8F9FA)
                 )
             )
         }
@@ -45,9 +45,9 @@ fun SettingsScreen(viewModel: MainViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.background),
-            contentPadding = PaddingValues(bottom = 100.dp, top = MaterialTheme.spacing.medium),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.large)
+                .background(Color(0xFFF8F9FA)),
+            contentPadding = PaddingValues(bottom = 120.dp, top = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // Appearance Section
             item {
@@ -55,18 +55,25 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = MaterialTheme.spacing.medium),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = borderStroke(),
-                    shape = RoundedCornerShape(16.dp)
+                        .padding(horizontal = 24.dp)
+                        .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha=0.05f)),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(24.dp)
                 ) {
-                    Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
-                        Text("Theme Mode", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.size(36.dp).background(Color(0xFFE3F2FD), CircleShape), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.DarkMode, null, tint = Color(0xFF1976D2))
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text("Theme Mode", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             SettingsManager.ThemeMode.values().forEach { mode ->
                                 val selected = themeMode == mode
@@ -74,23 +81,30 @@ fun SettingsScreen(viewModel: MainViewModel) {
                                     selected = selected,
                                     onClick = { viewModel.settingsManager.setThemeMode(mode) },
                                     label = { Text(mode.name.lowercase().replaceFirstChar { it.uppercase() }) },
-                                    modifier = Modifier.weight(1f).testTag("theme_mode_${mode.name}"),
+                                    modifier = Modifier.weight(1f),
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                        selectedLabelColor = MaterialTheme.colorScheme.primary
                                     )
                                 )
                             }
                         }
 
-                        Divider(modifier = Modifier.padding(vertical = MaterialTheme.spacing.medium), color = MaterialTheme.colorScheme.outlineVariant)
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 20.dp), color = Color(0xFFF0F0F0))
 
-                        Text("Brand Color", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.size(36.dp).background(Color(0xFFFCE4EC), CircleShape), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Palette, null, tint = Color(0xFFC2185B))
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text("Brand Color", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
+                            horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
                             SettingsManager.AppThemeAccent.values().forEach { accent ->
                                 val color = when (accent) {
@@ -102,20 +116,19 @@ fun SettingsScreen(viewModel: MainViewModel) {
                                 val selected = themeAccent == accent
                                 Surface(
                                     modifier = Modifier
-                                        .size(40.dp)
+                                        .size(48.dp)
                                         .clip(CircleShape)
-                                        .clickable { viewModel.settingsManager.setThemeAccent(accent) }
-                                        .testTag("accent_${accent.name}"),
+                                        .clickable { viewModel.settingsManager.setThemeAccent(accent) },
                                     color = color,
                                     shape = CircleShape,
-                                    border = if (selected) androidx.compose.foundation.BorderStroke(3.dp, MaterialTheme.colorScheme.onSurface) else null
+                                    border = if (selected) androidx.compose.foundation.BorderStroke(3.dp, Color.Gray.copy(alpha = 0.3f)) else null
                                 ) {
                                     if (selected) {
                                         Icon(
                                             Icons.Default.Check,
                                             contentDescription = null,
                                             tint = Color.White,
-                                            modifier = Modifier.padding(8.dp)
+                                            modifier = Modifier.padding(12.dp)
                                         )
                                     }
                                 }
@@ -131,33 +144,38 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = MaterialTheme.spacing.medium),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = borderStroke(),
-                    shape = RoundedCornerShape(16.dp)
+                        .padding(horizontal = 24.dp)
+                        .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha=0.05f)),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(24.dp)
                 ) {
-                    Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
-                        Text("PDF Image Quality", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            "Controls compression level of scanned pages embedded in PDFs.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.size(36.dp).background(Color(0xFFFFF3E0), CircleShape), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.PictureAsPdf, null, tint = Color(0xFFF57C00))
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text("PDF Image Quality", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                                Text("Controls compression level", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             SettingsManager.PdfQuality.values().forEach { quality ->
                                 FilterChip(
                                     selected = pdfQuality == quality,
                                     onClick = { viewModel.settingsManager.setPdfQuality(quality) },
                                     label = { Text("${quality.name.lowercase().replaceFirstChar { it.uppercase() }}\n${quality.compression}%", textAlign = TextAlign.Center) },
-                                    modifier = Modifier.weight(1f).testTag("pdf_quality_${quality.name}"),
+                                    modifier = Modifier.weight(1f),
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                        selectedLabelColor = MaterialTheme.colorScheme.primary
                                     )
                                 )
                             }
@@ -172,28 +190,35 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = MaterialTheme.spacing.medium),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = borderStroke(),
-                    shape = RoundedCornerShape(16.dp)
+                        .padding(horizontal = 24.dp)
+                        .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha=0.05f)),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(24.dp)
                 ) {
-                    Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
-                        Text("App Language", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.size(36.dp).background(Color(0xFFE8F5E9), CircleShape), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Language, null, tint = Color(0xFF388E3C))
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text("App Language", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             listOf("en" to "English", "es" to "Spanish", "fr" to "French").forEach { (code, name) ->
                                 FilterChip(
                                     selected = appLanguage == code,
                                     onClick = { viewModel.settingsManager.setLanguage(code) },
                                     label = { Text(name) },
-                                    modifier = Modifier.weight(1f).testTag("lang_${code}"),
+                                    modifier = Modifier.weight(1f),
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                        selectedLabelColor = MaterialTheme.colorScheme.primary
                                     )
                                 )
                             }
@@ -207,24 +232,31 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(MaterialTheme.spacing.large),
+                        .padding(32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(
-                        Icons.Default.Scanner,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(48.dp)
-                    )
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
-                    Text("SmartScan AI", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
-                    Text("Version 2.0.0 (Pro)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(MaterialTheme.colorScheme.primary, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.DocumentScanner,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("SmartScan AI", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1E1E1E))
+                    Text("Version 2.0.0 (Pro)", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        "Designed with Material 3 and Jetpack Compose.\nLocal-first privacy, always.",
+                        "Designed with Material 3 & Compose.\nLocal-first privacy, always.",
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Color.Gray
                     )
                 }
             }
@@ -238,7 +270,9 @@ private fun SettingsSectionTitle(title: String) {
         text = title,
         style = MaterialTheme.typography.labelLarge,
         fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium).padding(bottom = MaterialTheme.spacing.small)
+        color = Color.Gray,
+        modifier = Modifier
+            .padding(horizontal = 32.dp)
+            .padding(bottom = 8.dp)
     )
 }
