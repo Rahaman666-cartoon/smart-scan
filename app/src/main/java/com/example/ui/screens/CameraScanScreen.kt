@@ -579,7 +579,7 @@ fun PerspectiveCropScreen(
                     }
                     IconButton(onClick = { 
                         currentBitmap = ImageUtils.rotateBitmap(currentBitmap, -90f) 
-                        initialDetection.points.reverse() // Naive rotation fix for demo
+                        val temp = ptTL; ptTL = ptTR; ptTR = ptBR; ptBR = ptBL; ptBL = temp
                     }) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.RotateLeft, contentDescription = "Rotate L", tint = Color.White)
@@ -588,6 +588,7 @@ fun PerspectiveCropScreen(
                     }
                     IconButton(onClick = { 
                         currentBitmap = ImageUtils.rotateBitmap(currentBitmap, 90f)
+                        val temp = ptTL; ptTL = ptBL; ptBL = ptBR; ptBR = ptTR; ptTR = temp
                     }) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.RotateRight, contentDescription = "Rotate R", tint = Color.White)
