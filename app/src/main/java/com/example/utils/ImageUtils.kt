@@ -445,7 +445,7 @@ object ImageUtils {
         }
 
         // Switch to high confidence if edge tracking is robust
-        val isConfidenceHigh = bestScore >= 0.44f && bestQuad != null
+        val isConfidenceHigh = bestScore >= 0.32f && bestQuad != null
 
         if (isConfidenceHigh && bestQuad != null) {
             fun normX(x: Int): Float = (x.toFloat() / dw).coerceIn(0.005f, 0.995f)

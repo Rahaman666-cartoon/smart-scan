@@ -435,15 +435,6 @@ fun PerspectiveCropScreen(
                     .fillMaxWidth()
                     .weight(1f)
                     .background(Color.Black)
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onPress = {
-                                showOriginal = true
-                                tryAwaitRelease()
-                                showOriginal = false
-                            }
-                        )
-                    }
             ) {
                 val containerWidthPx = with(LocalDensity.current) { maxWidth.toPx() }
                 val containerHeightPx = with(LocalDensity.current) { maxHeight.toPx() }
@@ -573,35 +564,39 @@ fun PerspectiveCropScreen(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    IconButton(onClick = { resetCrop() }) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Default.CropFree, contentDescription = "Reset Crop", tint = Color.White)
-                            Text("Expand", fontSize = 10.sp, color = Color.LightGray)
-                        }
+                    Column(
+                        modifier = Modifier.clickable { resetCrop() }.padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(Icons.Default.CropFree, contentDescription = "Reset Crop", tint = Color.White)
+                        Text("Expand", fontSize = 10.sp, color = Color.LightGray)
                     }
-                    IconButton(onClick = { 
-                        currentBitmap = ImageUtils.rotateBitmap(currentBitmap, -90f) 
-                        val temp = ptTL; ptTL = ptTR; ptTR = ptBR; ptBR = ptBL; ptBL = temp
-                    }) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Default.RotateLeft, contentDescription = "Rotate L", tint = Color.White)
-                            Text("Rotate L", fontSize = 10.sp, color = Color.LightGray)
-                        }
+                    Column(
+                        modifier = Modifier.clickable { 
+                            currentBitmap = ImageUtils.rotateBitmap(currentBitmap, -90f) 
+                            val temp = ptTL; ptTL = ptTR; ptTR = ptBR; ptBR = ptBL; ptBL = temp
+                        }.padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(Icons.Default.RotateLeft, contentDescription = "Rotate L", tint = Color.White)
+                        Text("Rotate L", fontSize = 10.sp, color = Color.LightGray)
                     }
-                    IconButton(onClick = { 
-                        currentBitmap = ImageUtils.rotateBitmap(currentBitmap, 90f)
-                        val temp = ptTL; ptTL = ptBL; ptBL = ptBR; ptBR = ptTR; ptTR = temp
-                    }) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Default.RotateRight, contentDescription = "Rotate R", tint = Color.White)
-                            Text("Rotate R", fontSize = 10.sp, color = Color.LightGray)
-                        }
+                    Column(
+                        modifier = Modifier.clickable { 
+                            currentBitmap = ImageUtils.rotateBitmap(currentBitmap, 90f)
+                            val temp = ptTL; ptTL = ptBL; ptBL = ptBR; ptBR = ptTR; ptTR = temp
+                        }.padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(Icons.Default.RotateRight, contentDescription = "Rotate R", tint = Color.White)
+                        Text("Rotate R", fontSize = 10.sp, color = Color.LightGray)
                     }
-                    IconButton(onClick = { resetAll() }) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Default.Restore, contentDescription = "Reset All", tint = Color.White)
-                            Text("Reset", fontSize = 10.sp, color = Color.LightGray)
-                        }
+                    Column(
+                        modifier = Modifier.clickable { resetAll() }.padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(Icons.Default.Restore, contentDescription = "Reset All", tint = Color.White)
+                        Text("Reset", fontSize = 10.sp, color = Color.LightGray)
                     }
                 }
 
