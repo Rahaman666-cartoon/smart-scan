@@ -151,10 +151,10 @@ object ImageUtils {
 
     fun detectDocumentCornersWithConfidence(bitmap: Bitmap): DetectionResult {
         val defaultPoints = listOf(
-            PointF(0.05f, 0.05f), // Top-Left
-            PointF(0.95f, 0.05f), // Top-Right
-            PointF(0.05f, 0.95f), // Bottom-Left
-            PointF(0.95f, 0.95f)  // Bottom-Right
+            PointF(0.05f, 0.05f),
+            PointF(0.95f, 0.05f),
+            PointF(0.05f, 0.95f),
+            PointF(0.95f, 0.95f)
         )
 
         val w = bitmap.width
@@ -163,329 +163,103 @@ object ImageUtils {
             return DetectionResult(defaultPoints, 0f, false)
         }
 
-        // Downsample for high-speed computation (max dimension 200px)
-        val maxDim = 200
-        val scale = maxDim.toFloat() / maxOf(w, h)
-        val dw = (w * scale).toInt().coerceAtLeast(15)
-        val dh = (h * scale).toInt().coerceAtLeast(15)
-
-        val scaled = Bitmap.createScaledBitmap(bitmap, dw, dh, true)
-        val pixels = IntArray(dw * dh)
-        scaled.getPixels(pixels, 0, dw, 0, 0, dw, dh)
-
-        // 1. Grayscale Conversion
-        val grays = FloatArray(dw * dh)
-        for (y in 0 until dh) {
-            for (x in 0 until dw) {
-                val idx = y * dw + x
-                val pixel = pixels[idx]
-                val r = (pixel shr 16) and 0xFF
-                val g = (pixel shr 8) and 0xFF
-                val b = pixel and 0xFF
-                grays[idx] = 0.299f * r + 0.587f * g + 0.114f * b
+        try {
+            if (!com.example.utils.OpenCvImageProcessor.ensureInitialized()) {
+                return DetectionResult(defaultPoints, 0f, false)
             }
-        }
-        scaled.recycle()
 
-        // 2. Box Blur (runs twice to closely approximate 5x5 Gaussian blur for noise filter)
-        val blurred = FloatArray(dw * dh)
-        for (pass in 0..1) {
-            val src = if (pass == 0) grays else blurred
-            val dest = if (pass == 0) blurred else grays
-            for (y in 2 until dh - 2) {
-                for (x in 2 until dw - 2) {
-                    var sum = 0f
-                    for (ky in -2..2) {
-                        for (kx in -2..2) {
-                            sum += src[(y + ky) * dw + (x + kx)]
-                        }
-                    }
-                    dest[y * dw + x] = sum / 25f
-                }
-            }
-        }
-        val grayInUse = grays // grays now holds the twice-blurred grayscales
+            // Downsample for speed
+            val maxDim = 800
+            val scale = maxDim.toFloat() / maxOf(w, h).coerceAtLeast(1)
+            val dw = (w * scale).toInt().coerceAtLeast(15)
+            val dh = (h * scale).toInt().coerceAtLeast(15)
 
-        // 3. Canny Edge Detection: Sobel Gradients
-        val gx = FloatArray(dw * dh)
-        val gy = FloatArray(dw * dh)
-        val mag = FloatArray(dw * dh)
-        val sector = IntArray(dw * dh)
-
-        for (y in 1 until dh - 1) {
-            for (x in 1 until dw - 1) {
-                val v00 = grayInUse[(y - 1) * dw + (x - 1)]
-                val v02 = grayInUse[(y - 1) * dw + (x + 1)]
-                val v10 = grayInUse[y * dw + (x - 1)]
-                val v12 = grayInUse[y * dw + (x + 1)]
-                val v20 = grayInUse[(y + 1) * dw + (x - 1)]
-                val v22 = grayInUse[(y + 1) * dw + (x + 1)]
-
-                val hGrad = v02 + 2f * v12 + v22 - (v00 + 2f * v10 + v20)
-
-                val v01 = grayInUse[(y - 1) * dw + x]
-                val v21 = grayInUse[(y + 1) * dw + x]
-
-                val vGrad = v20 + 2f * v21 + v22 - (v00 + 2f * v01 + v02)
-
-                gx[y * dw + x] = hGrad
-                gy[y * dw + x] = vGrad
-                val m = sqrt(hGrad * hGrad + vGrad * vGrad)
-                mag[y * dw + x] = m
-
-                if (m > 1e-4f) {
-                    val angle = atan2(vGrad, hGrad) * 180f / PI.toFloat()
-                    val positiveAngle = if (angle < 0) angle + 180f else angle
-                    sector[y * dw + x] = when {
-                        positiveAngle < 22.5f || positiveAngle >= 157.5f -> 0
-                        positiveAngle >= 22.5f && positiveAngle < 67.5f -> 45
-                        positiveAngle >= 67.5f && positiveAngle < 112.5f -> 90
-                        else -> 135
+            val scaled = Bitmap.createScaledBitmap(bitmap, dw, dh, true)
+            
+            // Run OpenCV Edge Pipeline
+            val edgeMat = com.example.utils.OpenCvImageProcessor.prepareForContourAnalysis(
+                bitmap = scaled,
+                autoThreshold = true,
+                blurKernelSize = 5.0,
+                dilateEdges = true
+            )
+            
+            val contours = com.example.utils.OpenCvImageProcessor.findContours(
+                edgeMat = edgeMat,
+                mode = org.opencv.imgproc.Imgproc.RETR_LIST,
+                method = org.opencv.imgproc.Imgproc.CHAIN_APPROX_SIMPLE
+            )
+            
+            val totalArea = (dw * dh).toDouble()
+            var bestQuad: List<org.opencv.core.Point>? = null
+            var maxArea = 0.0
+            
+            // Sort by area descending to find the largest quad
+            val sortedContours = contours.sortedByDescending { org.opencv.imgproc.Imgproc.contourArea(it) }
+            
+            for (contour in sortedContours) {
+                val contourArea = org.opencv.imgproc.Imgproc.contourArea(contour)
+                if (contourArea < totalArea * 0.05 || contourArea > totalArea * 0.98) continue
+                
+                val contour2f = org.opencv.core.MatOfPoint2f(*contour.toArray())
+                val approx2f = org.opencv.core.MatOfPoint2f()
+                val perimeter = org.opencv.imgproc.Imgproc.arcLength(contour2f, true)
+                org.opencv.imgproc.Imgproc.approxPolyDP(contour2f, approx2f, 0.03 * perimeter, true)
+                
+                val approxPoints = approx2f.toArray()
+                if (approxPoints.size == 4 && org.opencv.imgproc.Imgproc.isContourConvex(org.opencv.core.MatOfPoint(*approxPoints))) {
+                    if (contourArea > maxArea) {
+                        maxArea = contourArea
+                        bestQuad = approxPoints.toList()
                     }
                 }
+                contour2f.release()
+                approx2f.release()
+                
+                if (bestQuad != null) break // Since sorted by area, the first valid quad is the largest
             }
-        }
-
-        // 4. Non-Maximum Suppression & Border Exclusion
-        // Zero out magnitudes close to the border (within 5% margin) to prevent frame lines/overlays from dominating.
-        val borderX = (dw * 0.05f).toInt().coerceAtLeast(3)
-        val borderY = (dh * 0.05f).toInt().coerceAtLeast(3)
-
-        val suppressed = FloatArray(dw * dh)
-        var maxMag = 0f
-        for (y in 1 until dh - 1) {
-            for (x in 1 until dw - 1) {
-                val idx = y * dw + x
-                val m = mag[idx]
-                if (m <= 0f) continue
-
-                // Exclude coordinates too close to the borders of the bitmap.
-                if (x < borderX || x > dw - borderX || y < borderY || y > dh - borderY) {
-                    continue
+            
+            edgeMat.release()
+            for (c in contours) c.release()
+            
+            if (bestQuad != null) {
+                val pts = bestQuad.map { PointF(it.x.toFloat() / dw, it.y.toFloat() / dh) }
+                
+                // Sort to TL, TR, BL, BR
+                val sortedBySum = pts.sortedBy { it.x + it.y }
+                val tl = sortedBySum.first()
+                val br = sortedBySum.last()
+                val remaining = pts - listOf(tl, br)
+                val sortedByDiff = remaining.sortedBy { it.x - it.y }
+                val bl = sortedByDiff.first()
+                val tr = sortedByDiff.last()
+                
+                val sortedPoints = listOf(tl, tr, bl, br)
+                
+                // Expand slightly (2%) to capture full document border
+                val cx = sortedPoints.map { it.x }.average().toFloat()
+                val cy = sortedPoints.map { it.y }.average().toFloat()
+                val expand = 1.02f
+                val finalPoints = sortedPoints.map { pt ->
+                    PointF(
+                        (cx + (pt.x - cx) * expand).coerceIn(0.005f, 0.995f),
+                        (cy + (pt.y - cy) * expand).coerceIn(0.005f, 0.995f)
+                    )
                 }
-
-                val keep = when (sector[idx]) {
-                    0 -> m >= mag[idx - 1] && m >= mag[idx + 1]
-                    45 -> m >= mag[idx + dw - 1] && m >= mag[idx - dw + 1]
-                    90 -> m >= mag[idx - dw] && m >= mag[idx + dw]
-                    135 -> m >= mag[idx - dw - 1] && m >= mag[idx + dw + 1]
-                    else -> true
-                }
-
-                if (keep) {
-                    suppressed[idx] = m
-                    if (m > maxMag) maxMag = m
-                }
-            }
-        }
-
-        // 5. Clamped Double Thresholding & Hysteresis Edge Tracking
-        // Clamping prevents local white-on-black UI texts, badges, or camera borders from inflating the thresholds.
-        val highThreshold = (maxMag * 0.12f).coerceIn(15f, 48f)
-        val lowThreshold = highThreshold * 0.4f
-
-        val edges = BooleanArray(dw * dh)
-        val queue = java.util.ArrayDeque<Int>()
-        for (y in borderY until dh - borderY) {
-            for (x in borderX until dw - borderX) {
-                val idx = y * dw + x
-                if (suppressed[idx] >= highThreshold && !edges[idx]) {
-                    edges[idx] = true
-                    queue.add(idx)
-                    while (!queue.isEmpty()) {
-                        val currIdx = queue.poll()
-                        val cx = currIdx % dw
-                        val cy = currIdx / dw
-
-                        for (dy in -1..1) {
-                            for (dx in -1..1) {
-                                if (dx == 0 && dy == 0) continue
-                                val nx = cx + dx
-                                val ny = cy + dy
-                                if (nx in borderX until dw - borderX && ny in borderY until dh - borderY) {
-                                    val nIdx = ny * dw + nx
-                                    if (!edges[nIdx] && suppressed[nIdx] >= lowThreshold) {
-                                        edges[nIdx] = true
-                                        queue.add(nIdx)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // 6. Morphological Dilation to Close Tiny Gaps
-        val dilated = BooleanArray(dw * dh)
-        for (y in borderY + 1 until dh - borderY - 1) {
-            for (x in borderX + 1 until dw - borderX - 1) {
-                val idx = y * dw + x
-                if (edges[idx]) {
-                    dilated[idx] = true
-                    dilated[idx - 1] = true
-                    dilated[idx + 1] = true
-                    dilated[idx - dw] = true
-                    dilated[idx + dw] = true
-                }
-            }
-        }
-
-        // 7. Find All Contours via robust BFS connected components search
-        val contours = ArrayList<List<Point>>()
-        val visited = BooleanArray(dw * dh)
-
-        for (y in borderY + 1 until dh - borderY - 1) {
-            for (x in borderX + 1 until dw - borderX - 1) {
-                val idx = y * dw + x
-                if (dilated[idx] && !visited[idx]) {
-                    val component = ArrayList<Point>()
-                    val bfsQueue = java.util.ArrayDeque<Int>()
-                    bfsQueue.add(idx)
-                    visited[idx] = true
-
-                    while (!bfsQueue.isEmpty() && component.size < 3000) {
-                        val currIdx = bfsQueue.poll()
-                        val cx = currIdx % dw
-                        val cy = currIdx / dw
-                        component.add(Point(cx, cy))
-
-                        for (dy in -1..1) {
-                            for (dx in -1..1) {
-                                if (dx == 0 && dy == 0) continue
-                                val nx = cx + dx
-                                val ny = cy + dy
-                                if (nx in borderX until dw - borderX && ny in borderY until dh - borderY) {
-                                    val nIdx = ny * dw + nx
-                                    if (dilated[nIdx] && !visited[nIdx]) {
-                                        visited[nIdx] = true
-                                        bfsQueue.add(nIdx)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if (component.size >= 18) {
-                        contours.add(component)
-                    }
-                }
-            }
-        }
-
-        // 8. Analyze and Score Candidate Quadrilaterals
-        var bestQuad: List<Point>? = null
-        var bestScore = 0f
-        val totalArea = dw * dh.toFloat()
-
-        for (contour in contours) {
-            val hull = convexHull(contour)
-            if (hull.size < 4) continue
-
-            val perimeter = hullPerimeter(hull)
-            val epsilon = perimeter * 0.042f
-            val simplified = approxPolyDPList(hull, epsilon)
-
-            val fourPoints = findFourCorners(simplified, dw, dh)
-            if (fourPoints.size != 4) continue
-
-            val quadArea = polygonArea(fourPoints)
-            val areaRatio = quadArea / totalArea
-
-            // Standard document size ratio validation
-            if (areaRatio < 0.12f || areaRatio > 0.90f) continue
-
-            // Ensure the points are well separated (not collapsed) to avoid triangle degeneracy.
-            var tooClose = false
-            for (i in 0 until 4) {
-                for (j in i + 1 until 4) {
-                    val dx = fourPoints[i].x - fourPoints[j].x
-                    val dy = fourPoints[i].y - fourPoints[j].y
-                    val dist = sqrt((dx * dx + dy * dy).toFloat())
-                    if (dist < dw * 0.18f) { 
-                        tooClose = true
-                    }
-                }
-            }
-            if (tooClose) continue
-
-            // Calculate the continuous edge matching score
-            var edgeHits = 0
-            var totalSamplePts = 0
-            for (i in 0 until 4) {
-                val p1 = fourPoints[i]
-                val p2 = fourPoints[(i + 1) % 4]
-                val steps = maxOf(abs(p2.x - p1.x), abs(p2.y - p1.y)).coerceAtLeast(1)
-                for (step in 0..steps) {
-                    val t = step.toFloat() / steps
-                    val sx = (p1.x + t * (p2.x - p1.x)).roundToInt().coerceIn(0, dw - 1)
-                    val sy = (p1.y + t * (p2.y - p1.y)).roundToInt().coerceIn(0, dh - 1)
-                    totalSamplePts++
-                    if (dilated[sy * dw + sx]) {
-                        edgeHits++
-                    }
-                }
-            }
-
-            val edgeScore = if (totalSamplePts > 0) edgeHits.toFloat() / totalSamplePts else 0f
-            var score = edgeScore
-
-            // Penalize overly tiny or overly massive documents slightly to favor central papers
-            if (areaRatio < 0.18f || areaRatio > 0.85f) {
-                score *= 0.75f
-            }
-            if (!isConvexQuad(fourPoints)) {
-                score *= 0.15f
-            }
-
-            if (score > bestScore) {
-                bestScore = score
-                bestQuad = fourPoints
-            }
-        }
-
-        // Switch to high confidence if edge tracking is robust
-        val isConfidenceHigh = bestScore >= 0.32f && bestQuad != null
-
-        if (isConfidenceHigh && bestQuad != null) {
-            fun normX(x: Int): Float = (x.toFloat() / dw).coerceIn(0.005f, 0.995f)
-            fun normY(y: Int): Float = (y.toFloat() / dh).coerceIn(0.005f, 0.995f)
-
-            val tl = PointF(normX(bestQuad[0].x), normY(bestQuad[0].y))
-            val tr = PointF(normX(bestQuad[1].x), normY(bestQuad[1].y))
-            val bl = PointF(normX(bestQuad[2].x), normY(bestQuad[2].y))
-            val br = PointF(normX(bestQuad[3].x), normY(bestQuad[3].y))
-
-            val cx = (tl.x + tr.x + bl.x + br.x) / 4f
-            val cy = (tl.y + tr.y + bl.y + br.y) / 4f
-            val expand = 1.042f // Mild 4% outward expansion to prevent tight cutting and guarantee full bounds
-
-            fun expandPt(pt: PointF): PointF {
-                val dx = pt.x - cx
-                val dy = pt.y - cy
-                return PointF(
-                    (cx + dx * expand).coerceIn(0.002f, 0.998f),
-                    (cy + dy * expand).coerceIn(0.002f, 0.998f)
+                
+                return DetectionResult(
+                    points = finalPoints,
+                    confidence = 1.0f,
+                    isHighConfidence = true
                 )
             }
-
-            val finalPoints = listOf(
-                expandPt(tl),
-                expandPt(tr),
-                expandPt(bl),
-                expandPt(br)
-            )
-
-            return DetectionResult(
-                points = finalPoints,
-                confidence = bestScore,
-                isHighConfidence = true
-            )
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
 
         return DetectionResult(
             points = defaultPoints,
-            confidence = bestScore,
+            confidence = 0f,
             isHighConfidence = false
         )
     }
