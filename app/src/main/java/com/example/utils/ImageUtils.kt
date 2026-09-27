@@ -192,9 +192,10 @@ object ImageUtils {
             
             val totalArea = (dw * dh).toDouble()
             var bestQuad: List<org.opencv.core.Point>? = null
+            var largestContourRect: List<org.opencv.core.Point>? = null
             var maxArea = 0.0
             
-            // Sort by area descending to find the largest quad
+            // Sort by area descending to find the largest shapes
             val sortedContours = contours.sortedByDescending { org.opencv.imgproc.Imgproc.contourArea(it) }
             
             for (contour in sortedContours) {
@@ -202,21 +203,38 @@ object ImageUtils {
                 if (contourArea < totalArea * 0.05 || contourArea > totalArea * 0.98) continue
                 
                 val contour2f = org.opencv.core.MatOfPoint2f(*contour.toArray())
+                
+                // Save the minimum bounding rectangle of the absolute largest shape as a fallback
+                if (largestContourRect == null) {
+                    val rect = org.opencv.imgproc.Imgproc.minAreaRect(contour2f)
+                    val rectPoints = arrayOfNulls<org.opencv.core.Point>(4)
+                    rect.points(rectPoints)
+                    largestContourRect = rectPoints.filterNotNull()
+                }
+
                 val approx2f = org.opencv.core.MatOfPoint2f()
                 val perimeter = org.opencv.imgproc.Imgproc.arcLength(contour2f, true)
-                org.opencv.imgproc.Imgproc.approxPolyDP(contour2f, approx2f, 0.03 * perimeter, true)
                 
-                val approxPoints = approx2f.toArray()
-                if (approxPoints.size == 4 && org.opencv.imgproc.Imgproc.isContourConvex(org.opencv.core.MatOfPoint(*approxPoints))) {
-                    if (contourArea > maxArea) {
-                        maxArea = contourArea
+                // Progressively increase approximation epsilon to force 4 corners even if edge is jagged/covered by fingers
+                val epsilons = listOf(0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.1)
+                for (eps in epsilons) {
+                    org.opencv.imgproc.Imgproc.approxPolyDP(contour2f, approx2f, eps * perimeter, true)
+                    val approxPoints = approx2f.toArray()
+                    if (approxPoints.size == 4 && org.opencv.imgproc.Imgproc.isContourConvex(org.opencv.core.MatOfPoint(*approxPoints))) {
                         bestQuad = approxPoints.toList()
+                        break
                     }
                 }
+                
                 contour2f.release()
                 approx2f.release()
                 
-                if (bestQuad != null) break // Since sorted by area, the first valid quad is the largest
+                if (bestQuad != null) break // Found a valid quadrilateral!
+            }
+            
+            // If we couldn't find ANY perfect quadrilateral, use the bounding box of the largest object!
+            if (bestQuad == null && largestContourRect != null) {
+                bestQuad = largestContourRect
             }
             
             edgeMat.release()
