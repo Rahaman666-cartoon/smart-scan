@@ -79,13 +79,12 @@ object MlKitHelper {
             val pixels = IntArray(bitmap.width * bitmap.height)
             bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
             
-            val maskBuffer = mask.buffer
-            maskBuffer.rewind()
+            mask.rewind()
             
             for (y in 0 until bitmap.height) {
                 for (x in 0 until bitmap.width) {
                     val index = y * bitmap.width + x
-                    val confidence = maskBuffer.float
+                    val confidence = mask.get()
                     
                     if (confidence < 0.5f) { // Threshold for background
                         pixels[index] = Color.TRANSPARENT
