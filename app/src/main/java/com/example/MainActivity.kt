@@ -62,6 +62,51 @@ class MainActivity : ComponentActivity() {
 
                 val navController = rememberNavController()
 
+                val scannerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                    contract = androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult()
+                ) { result ->
+                    if (result.resultCode == android.app.Activity.RESULT_OK) {
+                        val scanResult = com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult.fromActivityResultIntent(result.data)
+                        scanResult?.pages?.forEach { page ->
+                            try {
+                                val source = android.graphics.ImageDecoder.createSource(contentResolver, page.imageUri)
+                                val bitmap = android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                                    decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+                                    decoder.isMutableRequired = true
+                                }
+                                viewModel.addScannedPage(bitmap)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        }
+                        if (scanResult?.pages?.isNotEmpty() == true) {
+                            navController.navigate("pdf_merge")
+                        }
+                    }
+                }
+
+                val activity = this@MainActivity
+                val launchScanner: () -> Unit = {
+                    val options = com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.Builder()
+                        .setGalleryImportAllowed(true)
+                        .setPageLimit(30)
+                        .setResultFormats(
+                            com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_JPEG,
+                            com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_PDF
+                        )
+                        .setScannerMode(com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+                        .build()
+
+                    com.google.mlkit.vision.documentscanner.GmsDocumentScanning.getClient(options)
+                        .getStartScanIntent(activity)
+                        .addOnSuccessListener { intentSender ->
+                            scannerLauncher.launch(androidx.activity.result.IntentSenderRequest.Builder(intentSender).build())
+                        }
+                        .addOnFailureListener { e ->
+                            android.widget.Toast.makeText(activity, "Scanner failed: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                }
+
                 NavHost(
                     navController = navController,
                     startDestination = "dashboard",
@@ -119,8 +164,8 @@ class MainActivity : ComponentActivity() {
                                 when (currentDashboardTab) {
                                     0 -> HomeScreen(
                                         viewModel = viewModel,
-                                        onNavigateToCamera = { navController.navigate("camera") },
-                                        onNavigateToBarcode = { navController.navigate("camera") },
+                                        onNavigateToCamera = { launchScanner() },
+                                        onNavigateToBarcode = { launchScanner() },
                                         onNavigateToDocument = { /* No primitive route for this yet, handle later */ },
                                         onNavigateToMerge = { navController.navigate("pdf_merge") },
                                         onNavigateToCrop = { /* Not used from Home */ }
@@ -132,42 +177,6 @@ class MainActivity : ComponentActivity() {
                                     2 -> SettingsScreen(viewModel = viewModel)
                                 }
                             }
-                        }
-                    }
-
-                    composable("camera") {
-                        CameraScanScreen(
-                            viewModel = viewModel,
-                            onCaptured = { bitmap ->
-                                // Cache bitmap in viewModel or use a shared state holder for simplicity
-                                viewModel.addScannedPage(bitmap)
-                                navController.navigate("crop")
-                            },
-                            onBarcodeScanned = { barcode ->
-                                navController.popBackStack("dashboard", false)
-                            },
-                            onClose = { navController.popBackStack() }
-                        )
-                    }
-
-                    composable("crop") {
-                        // Assuming the bitmap is the last scanned page in viewModel
-                        val pages by viewModel.scannedPages.collectAsState()
-                        val lastBitmap = pages.lastOrNull()
-                        if (lastBitmap != null) {
-                            PerspectiveCropScreen(
-                                bitmap = lastBitmap,
-                                onCropped = { finalWarpedBitmap ->
-                                    viewModel.updateScannedPage(pages.size - 1, finalWarpedBitmap)
-                                    navController.popBackStack("dashboard", false)
-                                },
-                                onCancel = {
-                                    viewModel.removeScannedPage(pages.size - 1)
-                                    navController.popBackStack()
-                                }
-                            )
-                        } else {
-                            navController.popBackStack()
                         }
                     }
 
