@@ -93,6 +93,7 @@ dependencies {
   implementation(libs.play.services.mlkit.text.recognition)
   implementation(libs.play.services.mlkit.barcode.scanning)
   implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1")
+  implementation("com.google.android.gms:play-services-mlkit-subject-segmentation:16.0.0-beta1")
   implementation(libs.converter.moshi)
   implementation(libs.firebase.ai)
   implementation(libs.kotlinx.coroutines.android)

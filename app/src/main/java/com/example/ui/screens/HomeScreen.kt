@@ -81,6 +81,32 @@ fun HomeScreen(
         }
     }
 
+    val barcodeGalleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            scope.launch {
+                try {
+                    val bitmap = withContext(Dispatchers.IO) {
+                        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                            android.graphics.BitmapFactory.decodeStream(inputStream)
+                        }
+                    }
+                    if (bitmap != null) {
+                        val barcodes = com.example.utils.MlKitHelper.scanBarcodes(bitmap)
+                        withContext(Dispatchers.Main) {
+                            if (barcodes.isNotEmpty()) {
+                                Toast.makeText(context, "Barcode: ${barcodes.first().displayValue}", Toast.LENGTH_LONG).show()
+                            } else {
+                                Toast.makeText(context, "No barcode found in image", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                } catch (e: Exception) {}
+            }
+        }
+    }
+
     // A beautiful gradient brush for the header
     val headerGradient = Brush.verticalGradient(
         colors = listOf(
@@ -289,7 +315,7 @@ fun HomeScreen(
                         .height(72.dp)
                         .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha=0.05f))
                         .clip(RoundedCornerShape(20.dp))
-                        .clickable { onNavigateToBarcode() },
+                        .clickable { barcodeGalleryLauncher.launch("image/*") },
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Row(
@@ -364,6 +390,21 @@ fun HomeScreen(
                                         ) {
                                             Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.padding(4.dp))
                                         }
+                                        IconButton(
+                                            onClick = { 
+                                                scope.launch(Dispatchers.IO) {
+                                                    val noBg = com.example.utils.MlKitHelper.removeBackground(scannedPages[index])
+                                                    if (noBg != null) {
+                                                        withContext(Dispatchers.Main) {
+                                                            viewModel.updateScannedPage(index, noBg)
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            modifier = Modifier.align(Alignment.BottomStart).padding(4.dp).size(24.dp).background(Color.Blue.copy(0.7f), CircleShape)
+                                        ) {
+                                            Icon(Icons.Default.ContentCut, null, tint = Color.White, modifier = Modifier.padding(4.dp))
+                                        }
                                     }
                                 }
                             }
@@ -374,12 +415,22 @@ fun HomeScreen(
                                 }
                                 Button(
                                     onClick = {
-                                        documentNameInput = "Scan_${System.currentTimeMillis() / 1000}"
-                                        showSaveDialog = true
+                                        if (scannedPages.isNotEmpty()) {
+                                            scope.launch(Dispatchers.IO) {
+                                                val (extractedText, suggestedName) = com.example.utils.MlKitHelper.recognizeTextAndSuggestName(scannedPages.first())
+                                                withContext(Dispatchers.Main) {
+                                                    documentNameInput = suggestedName + "_" + (System.currentTimeMillis() / 1000)
+                                                    showSaveDialog = true
+                                                    if (extractedText.isNotEmpty()) {
+                                                        Toast.makeText(context, "OCR Auto-Naming Success!", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                }
+                                            }
+                                        }
                                     },
                                     modifier = Modifier.weight(1f)
                                 ) {
-                                    Text("Save & OCR")
+                                    Text("Save & Auto-Name")
                                 }
                             }
                         }
