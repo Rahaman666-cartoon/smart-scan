@@ -106,7 +106,7 @@ class MainActivity : ComponentActivity() {
 
                 fun openPdfDocument(context: android.content.Context, doc: com.example.data.DocumentEntity) {
                     try {
-                        val file = java.io.File(doc.pdfPath)
+                        val file = java.io.File(doc.filePath)
                         val uri = androidx.core.content.FileProvider.getUriForFile(
                             context,
                             "${context.applicationContext.packageName}.fileprovider",
