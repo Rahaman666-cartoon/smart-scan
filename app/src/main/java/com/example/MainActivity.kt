@@ -79,6 +79,9 @@ class MainActivity : ComponentActivity() {
                                 e.printStackTrace()
                             }
                         }
+                        if (scanResult?.pages?.isNotEmpty() == true) {
+                            navController.navigate("document_preview")
+                        }
                     }
                 }
 
@@ -193,6 +196,22 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
+                    }
+
+                    composable(
+                        "document_preview",
+                        enterTransition = { slideIntoContainer(androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Up) + androidx.compose.animation.fadeIn() },
+                        exitTransition = { slideOutOfContainer(androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Down) + androidx.compose.animation.fadeOut() }
+                    ) {
+                        com.example.ui.screens.DocumentPreviewScreen(
+                            viewModel = viewModel,
+                            onNavigateBack = { navController.popBackStack() },
+                            onNavigateToHome = {
+                                navController.navigate("dashboard") {
+                                    popUpTo("dashboard") { inclusive = true }
+                                }
+                            }
+                        )
                     }
 
                     composable("pdf_merge") {
