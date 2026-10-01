@@ -53,7 +53,12 @@ fun DocumentPreviewScreen(
                 isRunningOcr = true
                 try {
                     val text = withContext<String>(Dispatchers.IO) {
-                        com.example.utils.MlKitHelper.recognizeTextAndSuggestName(scannedPages[currentIndex]).first
+                        val uri = scannedPages[currentIndex]
+                        val source = android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
+                        val bitmap = android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                            decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+                        }
+                        com.example.utils.MlKitHelper.recognizeTextAndSuggestName(bitmap).first
                     }
                     val displayText = text.trim().ifEmpty { "No text found in this document." }
                     ocrTextMap = ocrTextMap.toMutableMap().apply { put(currentIndex, displayText) }
@@ -126,13 +131,15 @@ fun DocumentPreviewScreen(
                     Button(onClick = {
                         if (scannedPages.isNotEmpty()) {
                             try {
-                                val currentBitmap = scannedPages[pagerState.currentPage]
+                                val currentUri = scannedPages[pagerState.currentPage]
                                 val dir = File(context.getExternalFilesDir(null), "ScannedImages")
                                 if (!dir.exists()) dir.mkdirs()
                                 val file = File(dir, "Scan_${System.currentTimeMillis()}.jpg")
-                                FileOutputStream(file).use { out ->
-                                    currentBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
-                                }
+                                val inputStream = context.contentResolver.openInputStream(currentUri)
+                                val outputStream = FileOutputStream(file)
+                                inputStream?.copyTo(outputStream)
+                                inputStream?.close()
+                                outputStream.close()
                                 Toast.makeText(context, "Saved JPG", Toast.LENGTH_SHORT).show()
                             } catch (e: Exception) {
                                 Toast.makeText(context, "Failed to save JPG", Toast.LENGTH_SHORT).show()
@@ -144,12 +151,14 @@ fun DocumentPreviewScreen(
                     Button(onClick = {
                         if (scannedPages.isNotEmpty()) {
                             try {
-                                val currentBitmap = scannedPages[pagerState.currentPage]
+                                val currentUri = scannedPages[pagerState.currentPage]
                                 val cachePath = File(context.cacheDir, "images")
                                 cachePath.mkdirs()
-                                val file = File(cachePath, "shared_image.png")
+                                val file = File(cachePath, "shared_image.jpg")
+                                val inputStream = context.contentResolver.openInputStream(currentUri)
                                 val fileOutputStream = FileOutputStream(file)
-                                currentBitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
+                                inputStream?.copyTo(fileOutputStream)
+                                inputStream?.close()
                                 fileOutputStream.close()
                                 
                                 val uri = androidx.core.content.FileProvider.getUriForFile(
@@ -158,7 +167,7 @@ fun DocumentPreviewScreen(
                                     file
                                 )
                                 val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                    type = "image/png"
+                                    type = "image/jpeg"
                                     putExtra(android.content.Intent.EXTRA_STREAM, uri)
                                     addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                 }
@@ -188,8 +197,8 @@ fun DocumentPreviewScreen(
                     // Immersive Image View
                     if (selectedTab == 0) {
                         Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-                            Image(
-                                bitmap = scannedPages[page].asImageBitmap(),
+                            coil.compose.AsyncImage(
+                                model = scannedPages[page],
                                 contentDescription = "Page $page",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Fit

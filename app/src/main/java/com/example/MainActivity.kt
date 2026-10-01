@@ -69,12 +69,17 @@ class MainActivity : ComponentActivity() {
                         val scanResult = com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult.fromActivityResultIntent(result.data)
                         scanResult?.pages?.forEach { page ->
                             try {
-                                val source = android.graphics.ImageDecoder.createSource(contentResolver, page.imageUri)
-                                val bitmap = android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
-                                    decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
-                                    decoder.isMutableRequired = true
+                                val inputStream = contentResolver.openInputStream(page.imageUri)
+                                if (inputStream != null) {
+                                    val outputDir = java.io.File(filesDir, "CanonicalPages")
+                                    if (!outputDir.exists()) outputDir.mkdirs()
+                                    val outputFile = java.io.File(outputDir, "page_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(5)}.jpg")
+                                    val outputStream = java.io.FileOutputStream(outputFile)
+                                    inputStream.copyTo(outputStream)
+                                    inputStream.close()
+                                    outputStream.close()
+                                    viewModel.addScannedPage(android.net.Uri.fromFile(outputFile))
                                 }
-                                viewModel.addScannedPage(bitmap)
                             } catch (e: Exception) {
                                 e.printStackTrace()
                             }

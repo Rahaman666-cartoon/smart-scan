@@ -64,8 +64,8 @@ class MainViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Active multi-page scan state
-    private val _scannedPages = MutableStateFlow<List<Bitmap>>(emptyList())
-    val scannedPages: StateFlow<List<Bitmap>> = _scannedPages
+    private val _scannedPages = MutableStateFlow<List<android.net.Uri>>(emptyList())
+    val scannedPages: StateFlow<List<android.net.Uri>> = _scannedPages
 
     // Current page being edited/cropped
     private val _selectedPageForEditIndex = MutableStateFlow<Int?>(-1)
@@ -111,9 +111,9 @@ class MainViewModel @Inject constructor(
     }
 
     // --- Current Scan Session (Multiple Page Scanner) ---
-    fun addScannedPage(bitmap: Bitmap) {
+    fun addScannedPage(uri: android.net.Uri) {
         val current = _scannedPages.value.toMutableList()
-        current.add(bitmap)
+        current.add(uri)
         _scannedPages.value = current
     }
 
@@ -125,10 +125,10 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun updateScannedPage(index: Int, bitmap: Bitmap) {
+    fun updateScannedPage(index: Int, uri: android.net.Uri) {
         val current = _scannedPages.value.toMutableList()
         if (index in current.indices) {
-            current[index] = bitmap
+            current[index] = uri
             _scannedPages.value = current
         }
     }
@@ -198,21 +198,17 @@ class MainViewModel @Inject constructor(
                 val sanitizedName = documentName.trim().ifEmpty { "SmartScan_${System.currentTimeMillis()}" }
                 val targetFile = File(outputDir, "$sanitizedName.pdf")
 
-                // Compress Bitmaps based on quality settings
-                val quality = settingsManager.pdfQuality.value.compression
-                val compressedPages = pages.map { original ->
-                    val stream = java.io.ByteArrayOutputStream()
-                    original.compress(Bitmap.CompressFormat.JPEG, quality, stream)
-                    val bytes = stream.toByteArray()
-                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                }
-
                 // 1. Generate PDF
-                PdfUtils.convertBitmapsToPdf(compressedPages, targetFile)
+                val quality = settingsManager.pdfQuality.value.compression
+                PdfUtils.convertUrisToPdf(context, pages, quality, targetFile)
 
                 // 2. Perform OCR on all pages in background to make document catalog searchable
                 val ocrTextBuilder = StringBuilder()
-                for ((idx, bitmap) in compressedPages.withIndex()) {
+                for ((idx, uri) in pages.withIndex()) {
+                    val source = android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
+                    val bitmap = android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                        decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+                    }
                     val text = kotlin.coroutines.suspendCoroutine<String> { continuation ->
                         MlKitUtils.performOcr(bitmap,
                             onSuccess = { result ->
@@ -234,7 +230,7 @@ class MainViewModel @Inject constructor(
                 val entity = DocumentEntity(
                     name = sanitizedName,
                     filePath = targetFile.absolutePath,
-                    pageCount = compressedPages.size,
+                    pageCount = pages.size,
                     ocrText = finalOcrText,
                     pdfSize = targetFile.length()
                 )

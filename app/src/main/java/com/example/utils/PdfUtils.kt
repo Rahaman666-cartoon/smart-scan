@@ -14,6 +14,37 @@ import java.io.FileOutputStream
 object PdfUtils {
 
     /**
+     * Converts a list of image URIs to a single multi-page PDF document
+     * Decodes and processes one page at a time to prevent OutOfMemory errors.
+     */
+    fun convertUrisToPdf(context: android.content.Context, uris: List<android.net.Uri>, quality: Int, outputFile: File) {
+        val document = PDDocument()
+        try {
+            for (uri in uris) {
+                // Decode one image at a time
+                val source = android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
+                val bitmap = android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                    decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+                    decoder.isMutableRequired = true
+                }
+                
+                val page = PDPage(PDRectangle(bitmap.width.toFloat(), bitmap.height.toFloat()))
+                document.addPage(page)
+
+                val pdImage = JPEGFactory.createFromImage(document, bitmap, quality / 100f, 72)
+                val contentStream = PDPageContentStream(document, page)
+                
+                contentStream.drawImage(pdImage, 0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
+                contentStream.close()
+                bitmap.recycle() // Release memory for this page
+            }
+            document.save(outputFile)
+        } finally {
+            document.close()
+        }
+    }
+
+    /**
      * Converts a list of Bitmaps to a single multi-page PDF document
      */
     fun convertBitmapsToPdf(bitmaps: List<Bitmap>, outputFile: File) {
