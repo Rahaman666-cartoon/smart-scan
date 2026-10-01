@@ -189,13 +189,13 @@ class MainActivity : ComponentActivity() {
                                         viewModel = viewModel,
                                         onNavigateToCamera = { launchScanner() },
                                         onNavigateToBarcode = { launchScanner() },
-                                        onNavigateToDocument = { doc -> openPdfDocument(activity, doc) },
+                                        onNavigateToDocument = { doc -> navController.navigate("saved_document/${doc.id}") },
                                         onNavigateToMerge = { navController.navigate("pdf_merge") },
                                         onNavigateToCrop = { /* Not used from Home */ }
                                     )
                                     1 -> DocumentListScreen(
                                         viewModel = viewModel,
-                                        onNavigateToDetail = { doc -> openPdfDocument(activity, doc) }
+                                        onNavigateToDetail = { doc -> navController.navigate("saved_document/${doc.id}") }
                                     )
                                     2 -> SettingsScreen(viewModel = viewModel)
                                 }
@@ -217,6 +217,34 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         )
+                    }
+
+                    composable(
+                        "saved_document/{documentId}",
+                        arguments = listOf(androidx.navigation.navArgument("documentId") { type = androidx.navigation.NavType.LongType })
+                    ) { backStackEntry ->
+                        val documentId = backStackEntry.arguments?.getLong("documentId") ?: 0L
+                        var document by remember { mutableStateOf<com.example.data.DocumentEntity?>(null) }
+                        var pages by remember { mutableStateOf<List<com.example.data.DocumentPageEntity>>(emptyList()) }
+                        
+                        LaunchedEffect(documentId) {
+                            document = viewModel.repository.getDocumentById(documentId)
+                            pages = viewModel.repository.getPagesForDocument(documentId)
+                        }
+
+                        if (document != null) {
+                            com.example.ui.screens.SavedDocumentScreen(
+                                document = document!!,
+                                pages = pages,
+                                viewModel = viewModel,
+                                onNavigateBack = { navController.popBackStack() },
+                                onEditSession = {
+                                    navController.navigate("dashboard") {
+                                        popUpTo("dashboard") { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
                     }
 
                     composable("pdf_merge") {

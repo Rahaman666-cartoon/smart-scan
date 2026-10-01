@@ -22,7 +22,7 @@ import java.io.IOException
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val repository: DocumentRepository,
+    val repository: DocumentRepository,
     val settingsManager: SettingsManager
 ) : ViewModel() {
 
@@ -147,6 +147,32 @@ class MainViewModel @Inject constructor(
     fun toggleFavorite(document: DocumentEntity) {
         viewModelScope.launch {
             repository.update(document.copy(isFavorite = !document.isFavorite))
+        }
+    }
+
+    fun deleteDocument(context: Context, document: DocumentEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Delete the PDF file
+                val pdfFile = File(document.filePath)
+                if (pdfFile.exists()) {
+                    pdfFile.delete()
+                }
+
+                // Delete canonical JPEG pages
+                val pages = repository.getPagesForDocument(document.id)
+                pages.forEach { page ->
+                    val pageFile = File(page.canonicalFilePath)
+                    if (pageFile.exists()) {
+                        pageFile.delete()
+                    }
+                }
+
+                repository.delete(document)
+                _fileOperationMessage.value = "Document deleted"
+            } catch (e: Exception) {
+                _fileOperationMessage.value = "Failed to delete: ${e.message}"
+            }
         }
     }
 
