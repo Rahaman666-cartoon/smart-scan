@@ -198,16 +198,7 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun deleteDocument(context: Context, document: DocumentEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val file = File(document.filePath)
-            if (file.exists()) {
-                file.delete()
-            }
-            repository.delete(document)
-            _fileOperationMessage.value = "Document deleted successfully"
-        }
-    }
+
 
     // --- PDF Compiling, OCR, QR Actions ---
     fun compileActiveSession(context: Context, documentName: String) {
