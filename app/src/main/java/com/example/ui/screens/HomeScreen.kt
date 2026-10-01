@@ -379,8 +379,8 @@ fun HomeScreen(
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(vertical = 12.dp)) {
                                 items(scannedPages.size) { index ->
                                     Box(modifier = Modifier.size(90.dp).clip(RoundedCornerShape(12.dp))) {
-                                        Image(
-                                            bitmap = scannedPages[index].asImageBitmap(),
+                                        coil.compose.AsyncImage(
+                                            model = scannedPages[index],
                                             contentDescription = null,
                                             contentScale = ContentScale.Crop,
                                             modifier = Modifier.fillMaxSize()
@@ -394,12 +394,25 @@ fun HomeScreen(
                                         IconButton(
                                             onClick = { 
                                                 scope.launch(Dispatchers.IO) {
-                                                    val noBg = com.example.utils.MlKitHelper.removeBackground(scannedPages[index])
-                                                    if (noBg != null) {
-                                                        withContext(Dispatchers.Main) {
-                                                            viewModel.updateScannedPage(index, noBg)
-                                                        }
+                                                    val source = android.graphics.ImageDecoder.createSource(context.contentResolver, scannedPages[index])
+                                                    val bitmap = android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                                                        decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+                                                        decoder.isMutableRequired = true
                                                     }
+                                                    val noBg = com.example.utils.MlKitHelper.removeBackground(bitmap)
+                                                    if (noBg != null) {
+                                                        val outputDir = java.io.File(context.filesDir, "CanonicalPages")
+                                                        if (!outputDir.exists()) outputDir.mkdirs()
+                                                        val outputFile = java.io.File(outputDir, "page_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(5)}.jpg")
+                                                        val outputStream = java.io.FileOutputStream(outputFile)
+                                                        noBg.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, outputStream)
+                                                        outputStream.close()
+                                                        withContext(Dispatchers.Main) {
+                                                            viewModel.updateScannedPage(index, android.net.Uri.fromFile(outputFile))
+                                                        }
+                                                        noBg.recycle()
+                                                    }
+                                                    bitmap.recycle()
                                                 }
                                             },
                                             modifier = Modifier.align(Alignment.BottomStart).padding(4.dp).size(24.dp).background(Color.Blue.copy(0.7f), CircleShape)
@@ -418,7 +431,12 @@ fun HomeScreen(
                                     onClick = {
                                         if (scannedPages.isNotEmpty()) {
                                             scope.launch(Dispatchers.IO) {
-                                                val (extractedText, suggestedName) = com.example.utils.MlKitHelper.recognizeTextAndSuggestName(scannedPages.first())
+                                                val source = android.graphics.ImageDecoder.createSource(context.contentResolver, scannedPages.first())
+                                                val bitmap = android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                                                    decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+                                                }
+                                                val (extractedText, suggestedName) = com.example.utils.MlKitHelper.recognizeTextAndSuggestName(bitmap)
+                                                bitmap.recycle()
                                                 withContext(Dispatchers.Main) {
                                                     documentNameInput = suggestedName + "_" + (System.currentTimeMillis() / 1000)
                                                     showSaveDialog = true

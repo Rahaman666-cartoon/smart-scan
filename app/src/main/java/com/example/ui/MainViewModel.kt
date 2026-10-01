@@ -343,11 +343,15 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val inputStream = context.contentResolver.openInputStream(uri)
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                inputStream?.close()
-
-                if (bitmap != null) {
-                    addScannedPage(bitmap)
+                if (inputStream != null) {
+                    val outputDir = java.io.File(context.filesDir, "CanonicalPages")
+                    if (!outputDir.exists()) outputDir.mkdirs()
+                    val outputFile = java.io.File(outputDir, "page_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(5)}.jpg")
+                    val outputStream = java.io.FileOutputStream(outputFile)
+                    inputStream.copyTo(outputStream)
+                    inputStream.close()
+                    outputStream.close()
+                    addScannedPage(android.net.Uri.fromFile(outputFile))
                     _fileOperationMessage.value = "Image imported to editor session"
                 } else {
                     _fileOperationMessage.value = "Failed to load image from gallery"
