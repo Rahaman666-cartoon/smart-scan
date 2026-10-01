@@ -574,7 +574,7 @@ fun HomeScreen(
                 Button(onClick = {
                     viewModel.compileActiveSession(context, documentNameInput)
                     showSaveDialog = false
-                }) { Text("Save & OCR") }
+                }) { Text("Save Document") }
             },
             dismissButton = {
                 TextButton(onClick = { showSaveDialog = false }) { Text("Cancel") }

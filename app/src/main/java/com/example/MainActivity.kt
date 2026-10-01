@@ -79,9 +79,6 @@ class MainActivity : ComponentActivity() {
                                 e.printStackTrace()
                             }
                         }
-                        if (scanResult?.pages?.isNotEmpty() == true) {
-                            navController.navigate("pdf_merge")
-                        }
                     }
                 }
 
@@ -105,6 +102,24 @@ class MainActivity : ComponentActivity() {
                         .addOnFailureListener { e ->
                             android.widget.Toast.makeText(activity, "Scanner failed: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
                         }
+                }
+
+                fun openPdfDocument(context: android.content.Context, doc: com.example.data.DocumentEntity) {
+                    try {
+                        val file = java.io.File(doc.pdfPath)
+                        val uri = androidx.core.content.FileProvider.getUriForFile(
+                            context,
+                            "${context.applicationContext.packageName}.fileprovider",
+                            file
+                        )
+                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                            setDataAndType(uri, "application/pdf")
+                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        context.startActivity(intent)
+                    } catch (e: Exception) {
+                        android.widget.Toast.makeText(context, "Could not open document: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                    }
                 }
 
                 NavHost(
@@ -166,13 +181,13 @@ class MainActivity : ComponentActivity() {
                                         viewModel = viewModel,
                                         onNavigateToCamera = { launchScanner() },
                                         onNavigateToBarcode = { launchScanner() },
-                                        onNavigateToDocument = { /* No primitive route for this yet, handle later */ },
+                                        onNavigateToDocument = { doc -> openPdfDocument(activity, doc) },
                                         onNavigateToMerge = { navController.navigate("pdf_merge") },
                                         onNavigateToCrop = { /* Not used from Home */ }
                                     )
                                     1 -> DocumentListScreen(
                                         viewModel = viewModel,
-                                        onNavigateToDetail = { /* No primitive route for this yet */ }
+                                        onNavigateToDetail = { doc -> openPdfDocument(activity, doc) }
                                     )
                                     2 -> SettingsScreen(viewModel = viewModel)
                                 }
