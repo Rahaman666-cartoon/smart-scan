@@ -52,12 +52,14 @@ fun DocumentPreviewScreen(
             if (!ocrTextMap.containsKey(currentIndex)) {
                 isRunningOcr = true
                 try {
-                    val text = withContext(Dispatchers.IO) {
+                    val text = withContext<String>(Dispatchers.IO) {
                         com.example.utils.MlKitHelper.recognizeTextAndSuggestName(scannedPages[currentIndex]).first
                     }
-                    ocrTextMap = ocrTextMap.toMutableMap().apply { put(currentIndex, text) }
+                    val displayText = text.trim().ifEmpty { "No text found in this document." }
+                    ocrTextMap = ocrTextMap.toMutableMap().apply { put(currentIndex, displayText) }
                 } catch (e: Exception) {
-                    Toast.makeText(context, "OCR failed", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "OCR failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    ocrTextMap = ocrTextMap.toMutableMap().apply { put(currentIndex, "OCR Failed.") }
                 }
                 isRunningOcr = false
             }
@@ -98,7 +100,7 @@ fun DocumentPreviewScreen(
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
+                    containerColor = if (selectedTab == 0) Color.Black else MaterialTheme.colorScheme.primary,
                     titleContentColor = Color.White,
                     navigationIconContentColor = Color.White,
                     actionIconContentColor = Color.White
@@ -107,7 +109,7 @@ fun DocumentPreviewScreen(
         },
         bottomBar = {
             BottomAppBar(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                containerColor = if (selectedTab == 0) Color.Black else MaterialTheme.colorScheme.surfaceVariant
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
@@ -118,8 +120,8 @@ fun DocumentPreviewScreen(
                         viewModel.compileActiveSession(context, name)
                         Toast.makeText(context, "Saved as PDF", Toast.LENGTH_SHORT).show()
                         onNavigateToHome()
-                    }) {
-                        Text("Save PDF")
+                    }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) {
+                        Text("PDF")
                     }
                     Button(onClick = {
                         if (scannedPages.isNotEmpty()) {
@@ -131,15 +133,44 @@ fun DocumentPreviewScreen(
                                 FileOutputStream(file).use { out ->
                                     currentBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
                                 }
-                                Toast.makeText(context, "Saved JPG to ${file.absolutePath}", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, "Saved JPG", Toast.LENGTH_SHORT).show()
                             } catch (e: Exception) {
                                 Toast.makeText(context, "Failed to save JPG", Toast.LENGTH_SHORT).show()
                             }
                         }
                     }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)) {
-                        Text("Save JPG")
+                        Text("JPG")
                     }
-                    Button(onClick = onNavigateToHome, colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)) {
+                    Button(onClick = {
+                        if (scannedPages.isNotEmpty()) {
+                            try {
+                                val currentBitmap = scannedPages[pagerState.currentPage]
+                                val cachePath = File(context.cacheDir, "images")
+                                cachePath.mkdirs()
+                                val file = File(cachePath, "shared_image.png")
+                                val fileOutputStream = FileOutputStream(file)
+                                currentBitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
+                                fileOutputStream.close()
+                                
+                                val uri = androidx.core.content.FileProvider.getUriForFile(
+                                    context,
+                                    "${context.applicationContext.packageName}.fileprovider",
+                                    file
+                                )
+                                val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                    type = "image/png"
+                                    putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(android.content.Intent.createChooser(shareIntent, "Share Image"))
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Error sharing", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))) {
+                        Text("Share")
+                    }
+                    Button(onClick = onNavigateToHome, colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)) {
                         Text("Exit")
                     }
                 }
@@ -154,14 +185,16 @@ fun DocumentPreviewScreen(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize()
                 ) { page ->
+                    // Immersive Image View
                     if (selectedTab == 0) {
-                        // Image View
-                        Image(
-                            bitmap = scannedPages[page].asImageBitmap(),
-                            contentDescription = "Page $page",
-                            modifier = Modifier.fillMaxSize().padding(16.dp),
-                            contentScale = ContentScale.Fit
-                        )
+                        Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+                            Image(
+                                bitmap = scannedPages[page].asImageBitmap(),
+                                contentDescription = "Page $page",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Fit
+                            )
+                        }
                     } else {
                         // Text View
                         Box(modifier = Modifier.fillMaxSize().padding(16.dp).background(Color.White).padding(16.dp)) {
