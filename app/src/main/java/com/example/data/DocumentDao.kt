@@ -22,4 +22,13 @@ interface DocumentDao {
 
     @Query("DELETE FROM scanned_documents WHERE id = :id")
     suspend fun deleteDocumentById(id: Long)
+
+    @Query("SELECT * FROM document_pages WHERE documentId = :documentId ORDER BY pageIndex ASC")
+    suspend fun getPagesForDocument(documentId: Long): List<DocumentPageEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPages(pages: List<DocumentPageEntity>)
+    
+    @Query("DELETE FROM document_pages WHERE documentId = :documentId")
+    suspend fun deletePagesForDocument(documentId: Long)
 }

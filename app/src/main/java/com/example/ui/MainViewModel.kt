@@ -234,7 +234,17 @@ class MainViewModel @Inject constructor(
                     ocrText = finalOcrText,
                     pdfSize = targetFile.length()
                 )
-                repository.insert(entity)
+                val documentId = repository.insert(entity)
+
+                // 4. Save canonical pages
+                val pageEntities = pages.mapIndexed { index, uri ->
+                    com.example.data.DocumentPageEntity(
+                        documentId = documentId,
+                        pageIndex = index,
+                        canonicalFilePath = uri.path ?: uri.toString()
+                    )
+                }
+                repository.insertPages(pageEntities)
 
                 withContext(Dispatchers.Main) {
                     clearActiveSession()
