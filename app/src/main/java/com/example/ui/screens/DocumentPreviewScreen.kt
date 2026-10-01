@@ -53,7 +53,7 @@ fun DocumentPreviewScreen(
                 isRunningOcr = true
                 try {
                     val text = withContext(Dispatchers.IO) {
-                        MlKitHelper.recognizeText(scannedPages[currentIndex])
+                        com.example.utils.MlKitHelper.recognizeTextAndSuggestName(scannedPages[currentIndex]).first
                     }
                     ocrTextMap = ocrTextMap.toMutableMap().apply { put(currentIndex, text) }
                 } catch (e: Exception) {
