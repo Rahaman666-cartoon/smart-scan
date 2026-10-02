@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -272,15 +274,14 @@ fun DocumentPreviewScreen(
                             if (isRunningOcr && !ocrTextMap.containsKey(page)) {
                                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = Color.White)
                             } else {
-                                androidx.compose.foundation.rememberScrollState().let { scrollState ->
-                                    Text(
-                                        text = ocrTextMap[page] ?: "No text found.",
-                                        color = Color.White,
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .androidx.compose.foundation.verticalScroll(scrollState)
-                                    )
-                                }
+                                val scrollState = rememberScrollState()
+                                Text(
+                                    text = ocrTextMap[page] ?: "No text found.",
+                                    color = Color.White,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .verticalScroll(scrollState)
+                                )
                             }
                         }
                     }
