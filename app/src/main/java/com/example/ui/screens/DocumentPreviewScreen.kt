@@ -83,15 +83,7 @@ fun DocumentPreviewScreen(
                         selectedTabIndex = selectedTab,
                         containerColor = Color.Transparent,
                         contentColor = Color.White,
-                        divider = {},
-                        indicator = { tabPositions ->
-                            if (selectedTab < tabPositions.size) {
-                                TabRowDefaults.SecondaryIndicator(
-                                    Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                                    color = Color.White
-                                )
-                            }
-                        }
+                        divider = {}
                     ) {
                         Tab(
                             selected = selectedTab == 0,
@@ -137,7 +129,7 @@ fun DocumentPreviewScreen(
                     .background(Color(0xFF121212))
             ) {
                 // Divider
-                HorizontalDivider(color = Color.DarkGray, thickness = 1.dp)
+                Divider(color = Color.DarkGray, thickness = 1.dp)
                 
                 Row(
                     modifier = Modifier
