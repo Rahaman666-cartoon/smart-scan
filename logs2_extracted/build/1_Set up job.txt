@@ -1,0 +1,33 @@
+﻿2026-10-01T02:44:25.9916073Z Current runner version: '2.337.0'
+2026-10-01T02:44:25.9996665Z ##[group]Runner Image Provisioner
+2026-10-01T02:44:25.9998102Z Hosted Compute Agent
+2026-10-01T02:44:25.9999349Z Version: 20260828.587
+2026-10-01T02:44:26.0000601Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-10-01T02:44:26.0001907Z Build Date: 2026-08-28T16:44:25Z
+2026-10-01T02:44:26.0003235Z Worker ID: {706c81c1-0a21-4002-ae03-c4757fafb1c6}
+2026-10-01T02:44:26.0004929Z Azure Region: eastus
+2026-10-01T02:44:26.0006046Z ##[endgroup]
+2026-10-01T02:44:26.0008804Z ##[group]Operating System
+2026-10-01T02:44:26.0010013Z Ubuntu
+2026-10-01T02:44:26.0011113Z 24.04.5
+2026-10-01T02:44:26.0012147Z LTS
+2026-10-01T02:44:26.0013104Z ##[endgroup]
+2026-10-01T02:44:26.0014280Z ##[group]Runner Image
+2026-10-01T02:44:26.0036275Z Image: ubuntu-24.04
+2026-10-01T02:44:26.0037474Z Version: 20260920.314.1
+2026-10-01T02:44:26.0039517Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260920.314/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-01T02:44:26.0042738Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260920.314
+2026-10-01T02:44:26.0044442Z ##[endgroup]
+2026-10-01T02:44:26.0046876Z ##[group]GITHUB_TOKEN Permissions
+2026-10-01T02:44:26.0050083Z Contents: write
+2026-10-01T02:44:26.0051306Z Metadata: read
+2026-10-01T02:44:26.0052454Z ##[endgroup]
+2026-10-01T02:44:26.0076057Z Secret source: Actions
+2026-10-01T02:44:26.0077563Z Cache mode: write
+2026-10-01T02:44:26.0079215Z Prepare workflow directory
+2026-10-01T02:44:26.1112044Z Prepare all required actions
+2026-10-01T02:44:26.1193154Z Getting action download info
+2026-10-01T02:44:26.3698636Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-01T02:44:26.5157455Z Download action repository 'actions/setup-java@v4' (SHA:cf277c60eb25467037889841efdb72551f06f6c3)
+2026-10-01T02:44:26.7806522Z Download action repository 'softprops/action-gh-release@v1' (SHA:de2c0eb89ae2a093876385947365aca7b0e5f844)
+2026-10-01T02:44:27.0321712Z Complete job name: build

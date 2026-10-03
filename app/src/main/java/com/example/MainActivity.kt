@@ -64,12 +64,21 @@ class MainActivity : ComponentActivity() {
 
                 val navController = rememberNavController()
 
+                var isAppending by remember { mutableStateOf(false) }
+                var retakeIndex by remember { mutableStateOf(-1) }
+
                 val scannerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
                     contract = androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult()
                 ) { result ->
                     if (result.resultCode == android.app.Activity.RESULT_OK) {
-                        viewModel.clearActiveSession()
+                        if (!isAppending && retakeIndex == -1) {
+                            viewModel.clearActiveSession()
+                        }
                         val scanResult = com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult.fromActivityResultIntent(result.data)
+                        
+                        // Use an explicit index tracking variable to handle retake correctly
+                        var currentRetakeIndex = retakeIndex
+                        
                         scanResult?.pages?.forEach { page ->
                             try {
                                 val inputStream = contentResolver.openInputStream(page.imageUri)
@@ -81,20 +90,35 @@ class MainActivity : ComponentActivity() {
                                     inputStream.copyTo(outputStream)
                                     inputStream.close()
                                     outputStream.close()
-                                    viewModel.addScannedPage(android.net.Uri.fromFile(outputFile))
+                                    val newUri = android.net.Uri.fromFile(outputFile)
+                                    
+                                    if (currentRetakeIndex != -1) {
+                                        viewModel.updateScannedPage(currentRetakeIndex, newUri)
+                                        currentRetakeIndex = -1 // Only replace one page, if scanner returns multiple, append the rest
+                                    } else {
+                                        viewModel.addScannedPage(newUri)
+                                    }
                                 }
                             } catch (e: Exception) {
                                 e.printStackTrace()
                             }
                         }
                         if (scanResult?.pages?.isNotEmpty() == true) {
-                            navController.navigate("document_preview")
+                            if (!isAppending && retakeIndex == -1) {
+                                navController.navigate("document_preview")
+                            }
                         }
+                        // Reset states
+                        isAppending = false
+                        retakeIndex = -1
                     }
                 }
 
                 val activity = this@MainActivity
-                val launchScanner: () -> Unit = {
+                val launchScanner: (Boolean, Int) -> Unit = { append, index ->
+                    isAppending = append
+                    retakeIndex = index
+
                     val options = com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.Builder()
                         .setGalleryImportAllowed(true)
                         .setPageLimit(30)
@@ -190,8 +214,8 @@ class MainActivity : ComponentActivity() {
                                 when (currentDashboardTab) {
                                     0 -> HomeScreen(
                                         viewModel = viewModel,
-                                        onNavigateToCamera = { launchScanner() },
-                                        onNavigateToBarcode = { launchScanner() },
+                                        onNavigateToCamera = { launchScanner(false, -1) },
+                                        onNavigateToBarcode = { launchScanner(false, -1) },
                                         onNavigateToDocument = { doc -> 
                                             viewModel.loadExistingDocumentForPreview(doc)
                                             navController.navigate("document_preview")
@@ -224,7 +248,9 @@ class MainActivity : ComponentActivity() {
                                 navController.navigate("dashboard") {
                                     popUpTo("dashboard") { inclusive = true }
                                 }
-                            }
+                            },
+                            onAddPage = { launchScanner(true, -1) },
+                            onRetakePage = { index -> launchScanner(false, index) }
                         )
                     }
 

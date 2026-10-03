@@ -1,0 +1,42 @@
+﻿2026-10-01T02:44:27.8099065Z ##[group]Run actions/setup-java@v4
+2026-10-01T02:44:27.8100425Z with:
+2026-10-01T02:44:27.8101552Z   java-version: 17
+2026-10-01T02:44:27.8102630Z   distribution: temurin
+2026-10-01T02:44:27.8103781Z   cache: gradle
+2026-10-01T02:44:27.8105234Z   java-package: jdk
+2026-10-01T02:44:27.8106642Z   check-latest: false
+2026-10-01T02:44:27.8107964Z   server-id: github
+2026-10-01T02:44:27.8109062Z   server-username: GITHUB_ACTOR
+2026-10-01T02:44:27.8110355Z   server-password: GITHUB_TOKEN
+2026-10-01T02:44:27.8111654Z   overwrite-settings: true
+2026-10-01T02:44:27.8112832Z   job-status: success
+2026-10-01T02:44:27.8122625Z   token: ***
+2026-10-01T02:44:27.8123673Z ##[endgroup]
+2026-10-01T02:44:28.0573387Z ##[warning]setup-java v4 is deprecated and will no longer receive updates. Please migrate to actions/setup-java@v5.
+2026-10-01T02:44:28.0593739Z ##[group]Installed distributions
+2026-10-01T02:44:28.0772597Z Resolved Java 17.0.20+1 from tool-cache
+2026-10-01T02:44:28.0775604Z Setting Java 17.0.20+1 as the default
+2026-10-01T02:44:28.0789674Z (node:1992) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-01T02:44:28.0794241Z Creating toolchains.xml for JDK version 17 from temurin
+2026-10-01T02:44:28.0797502Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-01T02:44:28.1036391Z Writing to /home/runner/.m2/toolchains.xml
+2026-10-01T02:44:28.1055389Z 
+2026-10-01T02:44:28.1075991Z Java configuration:
+2026-10-01T02:44:28.1095877Z   Distribution: temurin
+2026-10-01T02:44:28.1098084Z   Version: 17.0.20+1
+2026-10-01T02:44:28.1116161Z   Path: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.20-1/x64
+2026-10-01T02:44:28.1135199Z 
+2026-10-01T02:44:28.1157030Z ##[endgroup]
+2026-10-01T02:44:28.1218126Z Creating settings.xml with server-id: github
+2026-10-01T02:44:28.1222328Z Writing to /home/runner/.m2/settings.xml
+2026-10-01T02:44:28.3880589Z Cache hit for: setup-java-Linux-x64-gradle-fdfa601b6b0c632dd42c5394039ca9c41cfea488a9b626569451fbab76a04c33
+2026-10-01T02:44:28.4000820Z (node:1992) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-01T02:44:29.4477264Z Received 146800640 of 864153739 (17.0%), 139.6 MBs/sec
+2026-10-01T02:44:30.4307793Z Received 364904448 of 864153739 (42.2%), 173.6 MBs/sec
+2026-10-01T02:44:31.4454813Z Received 603979776 of 864153739 (69.9%), 190.7 MBs/sec
+2026-10-01T02:44:32.4730701Z Received 843182219 of 864153739 (97.6%), 199.3 MBs/sec
+2026-10-01T02:44:32.5092285Z Received 864153739 of 864153739 (100.0%), 201.8 MBs/sec
+2026-10-01T02:44:32.5093460Z Cache Size: ~824 MB (864153739 B)
+2026-10-01T02:44:32.5141565Z [command]/usr/bin/tar -xf /home/runner/work/_temp/d4ac8f54-4a4d-4e4a-9be4-a5deb572648d/cache.tzst -P -C /home/runner/work/smart-scan/smart-scan --use-compress-program unzstd
+2026-10-01T02:44:41.4146148Z Cache restored successfully
+2026-10-01T02:44:41.7148611Z Cache restored from key: setup-java-Linux-x64-gradle-fdfa601b6b0c632dd42c5394039ca9c41cfea488a9b626569451fbab76a04c33

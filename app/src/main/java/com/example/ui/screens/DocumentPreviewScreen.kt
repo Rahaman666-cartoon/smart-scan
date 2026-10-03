@@ -20,11 +20,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.example.ui.MainViewModel
 import kotlinx.coroutines.Dispatchers
@@ -32,28 +35,42 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun DocumentPreviewScreen(
     viewModel: MainViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateToHome: () -> Unit
+    onNavigateToHome: () -> Unit,
+    onAddPage: () -> Unit,
+    onRetakePage: (Int) -> Unit
 ) {
     val context = LocalContext.current
     val scannedPages by viewModel.scannedPages.collectAsState()
     val previewingExistingDoc by viewModel.previewingExistingDoc.collectAsState()
     val scope = rememberCoroutineScope()
     
-    var selectedTab by remember { mutableStateOf(0) } // 0 = Image, 1 = Text
+    var isTextMode by remember { mutableStateOf(false) }
     var ocrTextMap by remember { mutableStateOf(mapOf<Int, String>()) }
     var isRunningOcr by remember { mutableStateOf(false) }
+    
+    val initialName = remember(previewingExistingDoc) {
+        previewingExistingDoc?.name ?: "New Doc ${SimpleDateFormat("MM-dd-yyyy HH:mm", Locale.getDefault()).format(Date())}"
+    }
+    var documentName by remember { mutableStateOf(initialName) }
+    var showRenameDialog by remember { mutableStateOf(false) }
+    var renameInput by remember { mutableStateOf("") }
+    
+    var showShareSheet by remember { mutableStateOf(false) }
 
     val pagerState = rememberPagerState(pageCount = { scannedPages.size })
 
     // Auto-run OCR when switching to text tab
-    LaunchedEffect(selectedTab, pagerState.currentPage) {
-        if (selectedTab == 1 && scannedPages.isNotEmpty()) {
+    LaunchedEffect(isTextMode, pagerState.currentPage) {
+        if (isTextMode && scannedPages.isNotEmpty()) {
             val currentIndex = pagerState.currentPage
             if (!ocrTextMap.containsKey(currentIndex)) {
                 isRunningOcr = true
@@ -76,32 +93,126 @@ fun DocumentPreviewScreen(
             }
         }
     }
+    
+    if (showRenameDialog) {
+        AlertDialog(
+            onDismissRequest = { showRenameDialog = false },
+            title = { Text("Rename Document") },
+            text = {
+                OutlinedTextField(
+                    value = renameInput,
+                    onValueChange = { renameInput = it },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { 
+                    if (renameInput.isNotBlank()) documentName = renameInput
+                    showRenameDialog = false 
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRenameDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showShareSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showShareSheet = false },
+            containerColor = Color.White
+        ) {
+            Column(modifier = Modifier.padding(16.dp).padding(bottom = 32.dp)) {
+                Text("Share as", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 16.dp, bottom = 16.dp))
+                
+                ListItem(
+                    headlineContent = { Text("PDF Document") },
+                    supportingContent = { Text("Share the entire document as a PDF") },
+                    leadingContent = { Icon(Icons.Default.PictureAsPdf, null, tint = Color(0xFFD32F2F)) },
+                    modifier = Modifier.clickable {
+                        showShareSheet = false
+                        if (scannedPages.isNotEmpty()) {
+                            scope.launch {
+                                Toast.makeText(context, "Preparing PDF for Share...", Toast.LENGTH_SHORT).show()
+                                try {
+                                    val cachePath = File(context.cacheDir, "shared_docs")
+                                    cachePath.mkdirs()
+                                    val file = File(cachePath, "shared_document.pdf")
+                                    com.example.utils.PdfUtils.convertUrisToPdf(context, scannedPages, 100, file)
+                                    val uri = FileProvider.getUriForFile(context, "${context.applicationContext.packageName}.fileprovider", file)
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "application/pdf"
+                                        putExtra(Intent.EXTRA_STREAM, uri)
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    context.startActivity(Intent.createChooser(shareIntent, "Share PDF"))
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Error sharing PDF", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                )
+                
+                ListItem(
+                    headlineContent = { Text("JPG Image") },
+                    supportingContent = { Text("Share the current page only") },
+                    leadingContent = { Icon(Icons.Default.Image, null, tint = Color(0xFF1976D2)) },
+                    modifier = Modifier.clickable {
+                        showShareSheet = false
+                        if (scannedPages.isNotEmpty()) {
+                            try {
+                                val currentUri = scannedPages[pagerState.currentPage]
+                                val cachePath = File(context.cacheDir, "images")
+                                cachePath.mkdirs()
+                                val file = File(cachePath, "shared_image.jpg")
+                                val inputStream = context.contentResolver.openInputStream(currentUri)
+                                val fileOutputStream = FileOutputStream(file)
+                                inputStream?.copyTo(fileOutputStream)
+                                inputStream?.close()
+                                fileOutputStream.close()
+                                val uri = FileProvider.getUriForFile(context, "${context.applicationContext.packageName}.fileprovider", file)
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "image/jpeg"
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(Intent.createChooser(shareIntent, "Share JPG"))
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Error sharing JPG", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                )
+            }
+        }
+    }
 
     Scaffold(
         containerColor = Color(0xFFF8F9FA),
         topBar = {
             TopAppBar(
                 title = { 
-                    TabRow(
-                        selectedTabIndex = selectedTab,
-                        containerColor = Color.Transparent,
-                        contentColor = Color(0xFF1E1E1E),
-                        divider = {}
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically, 
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                renameInput = documentName
+                                showRenameDialog = true
+                            }
                     ) {
-                        Tab(
-                            selected = selectedTab == 0,
-                            onClick = { selectedTab = 0 },
-                            text = { Text("Image", fontWeight = FontWeight.Bold) },
-                            selectedContentColor = Color(0xFF1E1E1E),
-                            unselectedContentColor = Color.Gray
+                        Text(
+                            text = documentName,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
-                        Tab(
-                            selected = selectedTab == 1,
-                            onClick = { selectedTab = 1 },
-                            text = { Text("Text", fontWeight = FontWeight.Bold) },
-                            selectedContentColor = Color(0xFF1E1E1E),
-                            unselectedContentColor = Color.Gray
-                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(Icons.Default.Edit, contentDescription = "Edit Name", modifier = Modifier.size(18.dp), tint = Color.Gray)
                     }
                 },
                 navigationIcon = {
@@ -110,15 +221,22 @@ fun DocumentPreviewScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { isTextMode = !isTextMode }) {
+                        Icon(
+                            if (isTextMode) Icons.Default.Image else Icons.Default.TextFields,
+                            contentDescription = "Toggle Text/Image View",
+                            tint = if (isTextMode) MaterialTheme.colorScheme.primary else Color(0xFF1E1E1E)
+                        )
+                    }
                     Text(
                         text = "${if (scannedPages.isEmpty()) 0 else pagerState.currentPage + 1}/${scannedPages.size}",
-                        modifier = Modifier.padding(end = 16.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp),
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF1E1E1E)
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFF8F9FA),
+                    containerColor = Color.White,
                     titleContentColor = Color(0xFF1E1E1E),
                     navigationIconContentColor = Color(0xFF1E1E1E),
                     actionIconContentColor = Color(0xFF1E1E1E)
@@ -129,136 +247,69 @@ fun DocumentPreviewScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface)
+                    .background(Color.White)
             ) {
-                // Divider
-                Divider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
+                Divider(color = Color(0xFFEEEEEE), thickness = 1.dp)
                 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 12.dp, horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                        .padding(vertical = 12.dp, horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     
-                    // Share PDF Option
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.clickable {
+                    BottomBarButton(
+                        icon = Icons.Default.AddBox, 
+                        label = "Add", 
+                        onClick = onAddPage
+                    )
+                    
+                    BottomBarButton(
+                        icon = Icons.Default.Replay, 
+                        label = "Retake", 
+                        onClick = {
                             if (scannedPages.isNotEmpty()) {
-                                scope.launch {
-                                    Toast.makeText(context, "Preparing PDF for Share...", Toast.LENGTH_SHORT).show()
-                                    try {
-                                        val cachePath = File(context.cacheDir, "shared_docs")
-                                        cachePath.mkdirs()
-                                        val file = File(cachePath, "shared_document.pdf")
-                                        com.example.utils.PdfUtils.convertUrisToPdf(context, scannedPages, 100, file)
-                                        
-                                        val uri = FileProvider.getUriForFile(context, "${context.applicationContext.packageName}.fileprovider", file)
-                                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                            type = "application/pdf"
-                                            putExtra(Intent.EXTRA_STREAM, uri)
-                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                        }
-                                        context.startActivity(Intent.createChooser(shareIntent, "Share PDF"))
-                                    } catch (e: Exception) {
-                                        Toast.makeText(context, "Error sharing PDF", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
+                                onRetakePage(pagerState.currentPage)
                             }
                         }
-                    ) {
-                        Icon(Icons.Default.PictureAsPdf, contentDescription = "Share PDF", tint = Color(0xFF1E1E1E))
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text("Share PDF", color = Color(0xFF1E1E1E), style = MaterialTheme.typography.labelSmall)
-                    }
-
-                    // Share JPG Option
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.clickable {
+                    )
+                    
+                    BottomBarButton(
+                        icon = Icons.Default.DeleteOutline, 
+                        label = "Delete", 
+                        onClick = {
                             if (scannedPages.isNotEmpty()) {
-                                try {
-                                    val currentUri = scannedPages[pagerState.currentPage]
-                                    val cachePath = File(context.cacheDir, "images")
-                                    cachePath.mkdirs()
-                                    val file = File(cachePath, "shared_image.jpg")
-                                    val inputStream = context.contentResolver.openInputStream(currentUri)
-                                    val fileOutputStream = FileOutputStream(file)
-                                    inputStream?.copyTo(fileOutputStream)
-                                    inputStream?.close()
-                                    fileOutputStream.close()
-                                    
-                                    val uri = FileProvider.getUriForFile(context, "${context.applicationContext.packageName}.fileprovider", file)
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "image/jpeg"
-                                        putExtra(Intent.EXTRA_STREAM, uri)
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
-                                    context.startActivity(Intent.createChooser(shareIntent, "Share JPG"))
-                                } catch (e: Exception) {
-                                    Toast.makeText(context, "Error sharing JPG", Toast.LENGTH_SHORT).show()
+                                viewModel.removeScannedPage(pagerState.currentPage)
+                                if (viewModel.scannedPages.value.isEmpty()) {
+                                    onNavigateBack()
                                 }
                             }
                         }
-                    ) {
-                        Icon(Icons.Default.Image, contentDescription = "Share JPG", tint = Color(0xFF1E1E1E))
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text("Share JPG", color = Color(0xFF1E1E1E), style = MaterialTheme.typography.labelSmall)
-                    }
-
-                    // Extract Text or Copy Text Option
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.clickable {
-                            if (selectedTab == 0) {
-                                selectedTab = 1
-                            } else {
-                                val textToCopy = ocrTextMap[pagerState.currentPage] ?: ""
-                                if (textToCopy.isNotBlank() && textToCopy != "OCR Failed.") {
-                                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                                    val clip = android.content.ClipData.newPlainText("Scanned Text", textToCopy)
-                                    clipboard.setPrimaryClip(clip)
-                                    Toast.makeText(context, "Text copied to clipboard", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        }
-                    ) {
-                        Icon(
-                            if (selectedTab == 0) Icons.Default.TextFields else Icons.Default.ContentCopy,
-                            contentDescription = if (selectedTab == 0) "Extract Text" else "Copy Text",
-                            tint = Color(0xFF1E1E1E)
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            if (selectedTab == 0) "Extract Text" else "Copy Text",
-                            color = Color(0xFF1E1E1E),
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                    }
-
-                    // Main Save Button
-                    Button(
-                        onClick = { 
+                    )
+                    
+                    BottomBarButton(
+                        icon = Icons.Default.Share, 
+                        label = "Share", 
+                        onClick = { showShareSheet = true }
+                    )
+                    
+                    BottomBarButton(
+                        icon = Icons.Default.Check, 
+                        label = "Done", 
+                        onClick = {
                             if (previewingExistingDoc != null) {
+                                viewModel.compileActiveSession(context, documentName)
+                                Toast.makeText(context, "Saved Successfully", Toast.LENGTH_SHORT).show()
                                 onNavigateBack()
                             } else {
-                                var name = "Scan_${System.currentTimeMillis()}"
-                                viewModel.compileActiveSession(context, name)
+                                viewModel.compileActiveSession(context, documentName)
                                 Toast.makeText(context, "Saved Successfully", Toast.LENGTH_SHORT).show()
                                 onNavigateToHome()
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Check, contentDescription = "Save", modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Done", fontWeight = FontWeight.Bold)
-                        }
-                    }
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }
@@ -266,7 +317,7 @@ fun DocumentPreviewScreen(
         Box(modifier = Modifier
             .fillMaxSize()
             .padding(padding)
-            .background(Color(0xFFF8F9FA))) {
+            .background(Color(0xFFF0F0F0))) { 
             
             if (scannedPages.isEmpty()) {
                 Text("No pages scanned", color = Color(0xFF1E1E1E), modifier = Modifier.align(Alignment.Center))
@@ -275,23 +326,27 @@ fun DocumentPreviewScreen(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize()
                 ) { page ->
-                    if (selectedTab == 0) {
-                        // Immersive Image View
-                        // NO extra white padding or gray containers! Just pure black and the scaled image.
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    if (!isTextMode) {
+                        Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
                             coil.compose.AsyncImage(
                                 model = scannedPages[page],
                                 contentDescription = "Page $page",
-                                modifier = Modifier.fillMaxSize(),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .shadow(4.dp, RoundedCornerShape(8.dp))
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.White),
                                 contentScale = ContentScale.Fit
                             )
                         }
                     } else {
-                        // Text View
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(Color(0xFFF8F9FA))
+                                .padding(16.dp)
+                                .shadow(4.dp, RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.White)
                                 .padding(16.dp)
                         ) {
                             if (isRunningOcr && !ocrTextMap.containsKey(page)) {
@@ -305,11 +360,46 @@ fun DocumentPreviewScreen(
                                         .fillMaxSize()
                                         .verticalScroll(scrollState)
                                 )
+                                
+                                FloatingActionButton(
+                                    onClick = {
+                                        val textToCopy = ocrTextMap[page] ?: ""
+                                        if (textToCopy.isNotBlank() && textToCopy != "OCR Failed.") {
+                                            val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                            val clip = android.content.ClipData.newPlainText("Scanned Text", textToCopy)
+                                            clipboard.setPrimaryClip(clip)
+                                            Toast.makeText(context, "Text copied to clipboard", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    modifier = Modifier.align(Alignment.BottomEnd),
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                ) {
+                                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy Text", tint = Color.White)
+                                }
                             }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun BottomBarButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    tint: Color = Color(0xFF1E1E1E)
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+    ) {
+        Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(24.dp))
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(label, color = tint, fontSize = 10.sp, fontWeight = FontWeight.Medium)
     }
 }

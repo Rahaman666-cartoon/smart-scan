@@ -133,6 +133,22 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun replaceScannedPage(index: Int, uri: android.net.Uri) {
+        val current = _scannedPages.value.toMutableList()
+        if (index in current.indices) {
+            current[index] = uri
+            _scannedPages.value = current
+        }
+    }
+
+    fun removeScannedPage(index: Int) {
+        val current = _scannedPages.value.toMutableList()
+        if (index in current.indices) {
+            current.removeAt(index)
+            _scannedPages.value = current
+        }
+    }
+
     fun updateScannedPage(index: Int, uri: android.net.Uri) {
         val current = _scannedPages.value.toMutableList()
         if (index in current.indices) {
