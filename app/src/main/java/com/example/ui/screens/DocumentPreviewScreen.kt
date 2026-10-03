@@ -91,14 +91,14 @@ fun DocumentPreviewScreen(
                             selected = selectedTab == 0,
                             onClick = { selectedTab = 0 },
                             text = { Text("Image", fontWeight = FontWeight.Bold) },
-                            selectedcontentColor = MaterialTheme.colorScheme.onBackground,
+                            selectedContentColor = MaterialTheme.colorScheme.onBackground,
                             unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Tab(
                             selected = selectedTab == 1,
                             onClick = { selectedTab = 1 },
                             text = { Text("Text", fontWeight = FontWeight.Bold) },
-                            selectedcontentColor = MaterialTheme.colorScheme.onBackground,
+                            selectedContentColor = MaterialTheme.colorScheme.onBackground,
                             unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -118,9 +118,9 @@ fun DocumentPreviewScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
-                    titlecontentColor = MaterialTheme.colorScheme.onBackground,
-                    navigationIconcontentColor = MaterialTheme.colorScheme.onBackground,
-                    actionIconcontentColor = MaterialTheme.colorScheme.onBackground
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
+                    actionIconContentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
         },
