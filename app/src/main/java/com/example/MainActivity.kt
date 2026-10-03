@@ -192,13 +192,19 @@ class MainActivity : ComponentActivity() {
                                         viewModel = viewModel,
                                         onNavigateToCamera = { launchScanner() },
                                         onNavigateToBarcode = { launchScanner() },
-                                        onNavigateToDocument = { doc -> navController.navigate("saved_document/${doc.id}") },
+                                        onNavigateToDocument = { doc -> 
+                                            viewModel.loadExistingDocumentForPreview(doc)
+                                            navController.navigate("document_preview")
+                                        },
                                         onNavigateToMerge = { navController.navigate("pdf_merge") },
                                         onNavigateToCrop = { /* Not used from Home */ }
                                     )
                                     1 -> DocumentListScreen(
                                         viewModel = viewModel,
-                                        onNavigateToDetail = { doc -> navController.navigate("saved_document/${doc.id}") }
+                                        onNavigateToDetail = { doc -> 
+                                            viewModel.loadExistingDocumentForPreview(doc)
+                                            navController.navigate("document_preview")
+                                        }
                                     )
                                     2 -> SettingsScreen(viewModel = viewModel)
                                 }

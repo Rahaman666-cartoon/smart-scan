@@ -51,7 +51,7 @@ import java.util.*
 @Composable
 fun DocumentListScreen(
     viewModel: MainViewModel,
-    onNavigateToDetail: (DocumentEntity) -> Unit
+    onNavigateToDetail: (com.example.data.DocumentWithPages) -> Unit
 ) {
     val context = LocalContext.current
     val documents by viewModel.documents.collectAsState()
@@ -59,9 +59,9 @@ fun DocumentListScreen(
     val sortType by viewModel.sortType.collectAsState()
     val onlyFavorites by viewModel.onlyFavorites.collectAsState()
 
-    var docToRename by remember { mutableStateOf<DocumentEntity?>(null) }
+    var docToRename by remember { mutableStateOf<com.example.data.DocumentEntity?>(null) }
     var renameInput by remember { mutableStateOf("") }
-    var docToDelete by remember { mutableStateOf<DocumentEntity?>(null) }
+    var docToDelete by remember { mutableStateOf<com.example.data.DocumentEntity?>(null) }
     val dateFormatter = remember { SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()) }
 
     Scaffold(
@@ -225,12 +225,12 @@ fun DocumentListScreen(
                             doc = doc,
                             dateFormatter = dateFormatter,
                             onClicked = { onNavigateToDetail(doc) },
-                            onToggleFavorite = { viewModel.toggleFavorite(doc) },
+                            onToggleFavorite = { viewModel.toggleFavorite(doc.document) },
                             onRename = {
-                                docToRename = doc
-                                renameInput = doc.name
+                                docToRename = doc.document
+                                renameInput = doc.document.name
                             },
-                            onDelete = { docToDelete = doc },
+                            onDelete = { docToDelete = doc.document },
                             onSplit = { viewModel.splitPdf(context, doc) }
                         )
                     }
@@ -314,25 +314,36 @@ fun DocumentListCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val thumbnailPath = doc.pages.firstOrNull()?.canonicalFilePath
             Box(
                 modifier = Modifier
                     .size(56.dp)
-                    .background(Color(0xFFFFEBEE), RoundedCornerShape(16.dp)),
+                    .background(Color(0xFFF5F5F5), RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    Icons.Default.PictureAsPdf,
-                    contentDescription = null,
-                    tint = Color(0xFFD32F2F),
-                    modifier = Modifier.size(32.dp)
-                )
+                if (thumbnailPath != null) {
+                    coil.compose.AsyncImage(
+                        model = thumbnailPath,
+                        contentDescription = "Thumbnail",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.PictureAsPdf,
+                        contentDescription = null,
+                        tint = Color(0xFFD32F2F),
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = doc.name,
+                    text = doc.document.name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF1E1E1E),
@@ -341,7 +352,7 @@ fun DocumentListCard(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "${doc.pageCount} Pages • ${formatSize(doc.pdfSize)} • ${dateFormatter.format(Date(doc.createdTime))}",
+                    text = "${doc.document.pageCount} Pages • ${formatSize(doc.document.pdfSize)} • ${dateFormatter.format(Date(doc.document.createdTime))}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
@@ -349,9 +360,9 @@ fun DocumentListCard(
 
             IconButton(onClick = onToggleFavorite) {
                 Icon(
-                    imageVector = if (doc.isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
+                    imageVector = if (doc.document.isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
                     contentDescription = "Favorite",
-                    tint = if (doc.isFavorite) Color(0xFFFFC107) else Color.LightGray
+                    tint = if (doc.document.isFavorite) Color(0xFFFFC107) else Color.LightGray
                 )
             }
 
@@ -398,10 +409,10 @@ fun DocumentDetailScreen(
     var pdfBitmaps by remember { mutableStateOf<List<Bitmap>>(emptyList()) }
     var renderingError by remember { mutableStateOf(false) }
 
-    LaunchedEffect(doc.filePath) {
+    LaunchedEffect(doc.document.filePath) {
         val bitmaps = mutableListOf<Bitmap>()
         try {
-            val file = File(doc.filePath)
+            val file = File(doc.document.filePath)
             if (file.exists()) {
                 val pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
                 val renderer = PdfRenderer(pfd)
@@ -426,7 +437,7 @@ fun DocumentDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(doc.name, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E)) },
+                title = { Text(doc.document.name, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E)) },
                 navigationIcon = {
                     IconButton(onClick = onClose) { Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color(0xFF1E1E1E)) }
                 },
@@ -434,7 +445,7 @@ fun DocumentDetailScreen(
                     IconButton(
                         onClick = {
                             try {
-                                val file = File(doc.filePath)
+                                val file = File(doc.document.filePath)
                                 if (file.exists()) {
                                     val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
                                     val intent = Intent(Intent.ACTION_SEND).apply {
@@ -504,7 +515,7 @@ fun DocumentDetailScreen(
                     ) {
                         Button(
                             onClick = {
-                                clipboardManager.setText(AnnotatedString(doc.ocrText))
+                                clipboardManager.setText(AnnotatedString(doc.document.ocrText))
                                 Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
                             },
                             modifier = Modifier.weight(1f)
@@ -518,8 +529,8 @@ fun DocumentDetailScreen(
                                 try {
                                     val dir = context.getExternalFilesDir("ScannedText") ?: context.filesDir
                                     if (!dir.exists()) dir.mkdirs()
-                                    val file = File(dir, "${doc.name}.txt")
-                                    file.writeText(doc.ocrText)
+                                    val file = File(dir, "${doc.document.name}.txt")
+                                    file.writeText(doc.document.ocrText)
                                     Toast.makeText(context, "Saved to ${file.name}", Toast.LENGTH_SHORT).show()
                                 } catch (e: Exception) {
                                     Toast.makeText(context, "Save failed", Toast.LENGTH_SHORT).show()
@@ -541,10 +552,10 @@ fun DocumentDetailScreen(
                     ) {
                         LazyColumn(modifier = Modifier.padding(16.dp)) {
                             item {
-                                if (doc.ocrText.isBlank()) {
+                                if (doc.document.ocrText.isBlank()) {
                                     Text("No text detected.", color = Color.Gray)
                                 } else {
-                                    Text(doc.ocrText, style = MaterialTheme.typography.bodyLarge, color = Color(0xFF1E1E1E), lineHeight = androidx.compose.ui.unit.TextUnit(24f, androidx.compose.ui.unit.TextUnitType.Sp))
+                                    Text(doc.document.ocrText, style = MaterialTheme.typography.bodyLarge, color = Color(0xFF1E1E1E), lineHeight = androidx.compose.ui.unit.TextUnit(24f, androidx.compose.ui.unit.TextUnitType.Sp))
                                 }
                             }
                         }
