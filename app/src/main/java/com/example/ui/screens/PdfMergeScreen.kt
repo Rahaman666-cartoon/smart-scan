@@ -128,16 +128,16 @@ fun PdfMergeScreen(
                         contentPadding = PaddingValues(bottom = 80.dp)
                     ) {
                         items(documents) { doc ->
-                            val isSelected = selectedIds.contains(doc.id)
+                            val isSelected = selectedIds.contains(doc.document.id)
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp, vertical = 6.dp)
                                     .clickable {
                                         selectedIds = if (isSelected) {
-                                            selectedIds - doc.id
+                                            selectedIds - doc.document.id
                                         } else {
-                                            selectedIds + doc.id
+                                            selectedIds + doc.document.id
                                         }
                                     },
                                 colors = CardDefaults.cardColors(
@@ -154,9 +154,9 @@ fun PdfMergeScreen(
                                         checked = isSelected,
                                         onCheckedChange = {
                                             selectedIds = if (isSelected) {
-                                                selectedIds - doc.id
+                                                selectedIds - doc.document.id
                                             } else {
-                                                selectedIds + doc.id
+                                                selectedIds + doc.document.id
                                             }
                                         }
                                     )
@@ -165,13 +165,13 @@ fun PdfMergeScreen(
 
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = doc.name,
+                                            text = doc.document.name,
                                             fontWeight = FontWeight.Bold,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
-                                            text = "${doc.pageCount} Pages • " + formatSize(doc.pdfSize),
+                                            text = "${doc.document.pageCount} Pages • " + formatSize(doc.document.pdfSize),
                                             style = MaterialTheme.typography.bodySmall
                                         )
                                     }
@@ -205,7 +205,7 @@ fun PdfMergeScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        val selectedList = documents.filter { selectedIds.contains(it.id) }
+                        val selectedList = documents.filter { selectedIds.contains(it.document.id) }.map { it.document }
                         viewModel.mergePdfs(context, selectedList, mergedNameInput)
                         showMergeNameDialog = false
                         onClose()
