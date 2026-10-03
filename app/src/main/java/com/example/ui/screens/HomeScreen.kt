@@ -48,7 +48,7 @@ fun HomeScreen(
     viewModel: MainViewModel,
     onNavigateToCamera: () -> Unit,
     onNavigateToBarcode: () -> Unit,
-    onNavigateToDocument: (DocumentEntity) -> Unit,
+    onNavigateToDocument: (com.example.data.DocumentWithPages) -> Unit,
     onNavigateToMerge: () -> Unit,
     onNavigateToCrop: (Bitmap) -> Unit
 ) {
@@ -371,7 +371,7 @@ fun HomeScreen(
             }
         }
 
-        val filteredDocs = if (searchQuery.isBlank()) documents else documents.filter { it.name.contains(searchQuery, ignoreCase = true) }
+        val filteredDocs = if (searchQuery.isBlank()) documents else documents.filter { it.document.name.contains(searchQuery, ignoreCase = true) }
 
         if (filteredDocs.isEmpty()) {
             item {
@@ -414,26 +414,36 @@ fun HomeScreen(
                             .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // PDF Icon/Thumbnail
+                        val thumbnailPath = doc.pages.firstOrNull()?.canonicalFilePath
                         Box(
                             modifier = Modifier
                                 .size(50.dp)
-                                .background(Color(0xFFFFEBEE), RoundedCornerShape(12.dp)),
+                                .background(Color(0xFFF5F5F5), RoundedCornerShape(12.dp))
+                                .clip(RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                Icons.Default.PictureAsPdf,
-                                contentDescription = null,
-                                tint = Color(0xFFD32F2F),
-                                modifier = Modifier.size(28.dp)
-                            )
+                            if (thumbnailPath != null) {
+                                coil.compose.AsyncImage(
+                                    model = thumbnailPath,
+                                    contentDescription = "Thumbnail",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Default.PictureAsPdf,
+                                    contentDescription = null,
+                                    tint = Color(0xFFD32F2F),
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
                         }
 
                         Spacer(modifier = Modifier.width(16.dp))
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = doc.name,
+                                text = doc.document.name,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF1E1E1E),
@@ -442,17 +452,17 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "${dateFormatter.format(Date(doc.createdTime))}  •  ${formatSize(doc.pdfSize)}",
+                                text = "${dateFormatter.format(Date(doc.document.createdTime))}  •  ${formatSize(doc.document.pdfSize)}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.Gray
                             )
                         }
 
-                        IconButton(onClick = { viewModel.toggleFavorite(doc) }) {
+                        IconButton(onClick = { viewModel.toggleFavorite(doc.document) }) {
                             Icon(
-                                imageVector = if (doc.isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
+                                imageVector = if (doc.document.isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
                                 contentDescription = "Favorite",
-                                tint = if (doc.isFavorite) Color(0xFFFFC107) else Color.LightGray
+                                tint = if (doc.document.isFavorite) Color(0xFFFFC107) else Color.LightGray
                             )
                         }
                     }

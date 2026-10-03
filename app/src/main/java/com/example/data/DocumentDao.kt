@@ -8,6 +8,10 @@ interface DocumentDao {
     @Query("SELECT * FROM scanned_documents ORDER BY createdTime DESC")
     fun getAllDocumentsFlow(): Flow<List<DocumentEntity>>
 
+    @Transaction
+    @Query("SELECT * FROM scanned_documents ORDER BY createdTime DESC")
+    fun getAllDocumentsWithPagesFlow(): Flow<List<DocumentWithPages>>
+
     @Query("SELECT * FROM scanned_documents WHERE id = :id LIMIT 1")
     suspend fun getDocumentById(id: Long): DocumentEntity?
 

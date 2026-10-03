@@ -42,6 +42,7 @@ fun DocumentPreviewScreen(
 ) {
     val context = LocalContext.current
     val scannedPages by viewModel.scannedPages.collectAsState()
+    val previewingExistingDoc by viewModel.previewingExistingDoc.collectAsState()
     val scope = rememberCoroutineScope()
     
     var selectedTab by remember { mutableStateOf(0) } // 0 = Image, 1 = Text
@@ -240,10 +241,14 @@ fun DocumentPreviewScreen(
                     // Main Save Button
                     Button(
                         onClick = { 
-                            var name = "Scan_${System.currentTimeMillis()}"
-                            viewModel.compileActiveSession(context, name)
-                            Toast.makeText(context, "Saved Successfully", Toast.LENGTH_SHORT).show()
-                            onNavigateToHome()
+                            if (previewingExistingDoc != null) {
+                                onNavigateBack()
+                            } else {
+                                var name = "Scan_${System.currentTimeMillis()}"
+                                viewModel.compileActiveSession(context, name)
+                                Toast.makeText(context, "Saved Successfully", Toast.LENGTH_SHORT).show()
+                                onNavigateToHome()
+                            }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(12.dp)

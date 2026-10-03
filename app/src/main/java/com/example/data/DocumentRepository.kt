@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 
 class DocumentRepository(private val documentDao: DocumentDao) {
     val allDocuments: Flow<List<DocumentEntity>> = documentDao.getAllDocumentsFlow()
+    val allDocumentsWithPages: Flow<List<DocumentWithPages>> = documentDao.getAllDocumentsWithPagesFlow()
 
     suspend fun getDocumentById(id: Long): DocumentEntity? {
         return documentDao.getDocumentById(id)

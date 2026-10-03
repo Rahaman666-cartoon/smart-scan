@@ -39,33 +39,41 @@ class MainViewModel @Inject constructor(
     private val _onlyFavorites = MutableStateFlow(false)
     val onlyFavorites: StateFlow<Boolean> = _onlyFavorites
 
-    val documents: StateFlow<List<DocumentEntity>> = combine(
-        repository.allDocuments,
+    val documents: StateFlow<List<com.example.data.DocumentWithPages>> = combine(
+        repository.allDocumentsWithPages,
         _searchQuery,
         _sortType,
         _onlyFavorites
     ) { allDocs, query, sort, favOnly ->
         var list = allDocs
         if (favOnly) {
-            list = list.filter { it.isFavorite }
+            list = list.filter { it.document.isFavorite }
         }
         if (query.isNotBlank()) {
             list = list.filter {
-                it.name.contains(query, ignoreCase = true) ||
-                        it.ocrText.contains(query, ignoreCase = true)
+                it.document.name.contains(query, ignoreCase = true) ||
+                        it.document.ocrText.contains(query, ignoreCase = true)
             }
         }
         when (sort) {
-            SortType.DATE_DESC -> list.sortedByDescending { it.createdTime }
-            SortType.DATE_ASC -> list.sortedBy { it.createdTime }
-            SortType.NAME_ASC -> list.sortedBy { it.name }
-            SortType.NAME_DESC -> list.sortedByDescending { it.name }
+            SortType.DATE_DESC -> list.sortedByDescending { it.document.createdTime }
+            SortType.DATE_ASC -> list.sortedBy { it.document.createdTime }
+            SortType.NAME_ASC -> list.sortedBy { it.document.name }
+            SortType.NAME_DESC -> list.sortedByDescending { it.document.name }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Active multi-page scan state
     private val _scannedPages = MutableStateFlow<List<android.net.Uri>>(emptyList())
     val scannedPages: StateFlow<List<android.net.Uri>> = _scannedPages
+
+    private val _previewingExistingDoc = MutableStateFlow<com.example.data.DocumentEntity?>(null)
+    val previewingExistingDoc: StateFlow<com.example.data.DocumentEntity?> = _previewingExistingDoc
+
+    fun loadExistingDocumentForPreview(doc: com.example.data.DocumentWithPages) {
+        _previewingExistingDoc.value = doc.document
+        _scannedPages.value = doc.pages.map { android.net.Uri.fromFile(java.io.File(it.canonicalFilePath)) }
+    }
 
     // Current page being edited/cropped
     private val _selectedPageForEditIndex = MutableStateFlow<Int?>(-1)
@@ -136,6 +144,7 @@ class MainViewModel @Inject constructor(
     fun clearActiveSession() {
         _scannedPages.value = emptyList()
         _selectedPageForEditIndex.value = -1
+        _previewingExistingDoc.value = null
         _ocrState.value = OcrState.Idle
     }
 
