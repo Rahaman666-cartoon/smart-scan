@@ -289,7 +289,7 @@ fun DocumentListScreen(
 
 @Composable
 fun DocumentListCard(
-    doc: DocumentEntity,
+    doc: com.example.data.DocumentWithPages,
     dateFormatter: SimpleDateFormat,
     onClicked: () -> Unit,
     onToggleFavorite: () -> Unit,
@@ -398,7 +398,7 @@ fun DocumentListCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DocumentDetailScreen(
-    doc: DocumentEntity,
+    doc: com.example.data.DocumentWithPages,
     viewModel: MainViewModel,
     onClose: () -> Unit
 ) {
