@@ -231,7 +231,7 @@ fun DocumentListScreen(
                                 renameInput = doc.document.name
                             },
                             onDelete = { docToDelete = doc.document },
-                            onSplit = { viewModel.splitPdf(context, doc) }
+                            onSplit = { viewModel.splitPdf(context, doc.document) }
                         )
                     }
                 }
