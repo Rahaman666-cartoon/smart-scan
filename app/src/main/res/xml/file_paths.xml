@@ -3,4 +3,5 @@
     <external-files-path name="scanned_docs" path="ScannedDocuments" />
     <external-files-path name="scanned_text" path="ScannedText" />
     <files-path name="internal_files" path="." />
+    <cache-path name="cache_files" path="." />
 </paths>
