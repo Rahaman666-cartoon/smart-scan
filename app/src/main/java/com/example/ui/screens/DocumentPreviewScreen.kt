@@ -93,14 +93,14 @@ fun DocumentPreviewScreen(
                             onClick = { selectedTab = 0 },
                             text = { Text("Image", fontWeight = FontWeight.Bold) },
                             selectedContentColor = Color(0xFF1E1E1E),
-                            unselectedContentColor = Color(0xFF1E1E1E)Variant
+                            unselectedContentColor = Color.Gray
                         )
                         Tab(
                             selected = selectedTab == 1,
                             onClick = { selectedTab = 1 },
                             text = { Text("Text", fontWeight = FontWeight.Bold) },
                             selectedContentColor = Color(0xFF1E1E1E),
-                            unselectedContentColor = Color(0xFF1E1E1E)Variant
+                            unselectedContentColor = Color.Gray
                         )
                     }
                 },
