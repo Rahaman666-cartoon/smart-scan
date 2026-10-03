@@ -77,29 +77,29 @@ fun DocumentPreviewScreen(
     }
 
     Scaffold(
-        containerColor = Color.Black,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { 
                     TabRow(
                         selectedTabIndex = selectedTab,
                         containerColor = Color.Transparent,
-                        contentColor = Color.White,
+                        contentColor = MaterialTheme.colorScheme.onBackground,
                         divider = {}
                     ) {
                         Tab(
                             selected = selectedTab == 0,
                             onClick = { selectedTab = 0 },
                             text = { Text("Image", fontWeight = FontWeight.Bold) },
-                            selectedContentColor = Color.White,
-                            unselectedContentColor = Color.Gray
+                            selectedcontentColor = MaterialTheme.colorScheme.onBackground,
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Tab(
                             selected = selectedTab == 1,
                             onClick = { selectedTab = 1 },
                             text = { Text("Text", fontWeight = FontWeight.Bold) },
-                            selectedContentColor = Color.White,
-                            unselectedContentColor = Color.Gray
+                            selectedcontentColor = MaterialTheme.colorScheme.onBackground,
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 },
@@ -113,14 +113,14 @@ fun DocumentPreviewScreen(
                         text = "${if (scannedPages.isEmpty()) 0 else pagerState.currentPage + 1}/${scannedPages.size}",
                         modifier = Modifier.padding(end = 16.dp),
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Black,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White,
-                    actionIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titlecontentColor = MaterialTheme.colorScheme.onBackground,
+                    navigationIconcontentColor = MaterialTheme.colorScheme.onBackground,
+                    actionIconcontentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
         },
@@ -128,10 +128,10 @@ fun DocumentPreviewScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF121212))
+                    .background(MaterialTheme.colorScheme.surface)
             ) {
                 // Divider
-                Divider(color = Color.DarkGray, thickness = 1.dp)
+                Divider(color = MaterialTheme.colorScheme.surfaceVariant, thickness = 1.dp)
                 
                 Row(
                     modifier = Modifier
@@ -168,9 +168,9 @@ fun DocumentPreviewScreen(
                             }
                         }
                     ) {
-                        Icon(Icons.Default.PictureAsPdf, contentDescription = "Share PDF", tint = Color.White)
+                        Icon(Icons.Default.PictureAsPdf, contentDescription = "Share PDF", tint = MaterialTheme.colorScheme.onSurface)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("Share PDF", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                        Text("Share PDF", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelSmall)
                     }
 
                     // Share JPG Option
@@ -202,9 +202,9 @@ fun DocumentPreviewScreen(
                             }
                         }
                     ) {
-                        Icon(Icons.Default.Image, contentDescription = "Share JPG", tint = Color.White)
+                        Icon(Icons.Default.Image, contentDescription = "Share JPG", tint = MaterialTheme.colorScheme.onSurface)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("Share JPG", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                        Text("Share JPG", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelSmall)
                     }
 
                     // Extract Text or Copy Text Option
@@ -227,12 +227,12 @@ fun DocumentPreviewScreen(
                         Icon(
                             if (selectedTab == 0) Icons.Default.TextFields else Icons.Default.ContentCopy,
                             contentDescription = if (selectedTab == 0) "Extract Text" else "Copy Text",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             if (selectedTab == 0) "Extract Text" else "Copy Text",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.labelSmall
                         )
                     }
@@ -261,10 +261,10 @@ fun DocumentPreviewScreen(
         Box(modifier = Modifier
             .fillMaxSize()
             .padding(padding)
-            .background(Color.Black)) {
+            .background(MaterialTheme.colorScheme.background)) {
             
             if (scannedPages.isEmpty()) {
-                Text("No pages scanned", color = Color.White, modifier = Modifier.align(Alignment.Center))
+                Text("No pages scanned", color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.align(Alignment.Center))
             } else {
                 HorizontalPager(
                     state = pagerState,
@@ -286,16 +286,16 @@ fun DocumentPreviewScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(Color.Black)
+                                .background(MaterialTheme.colorScheme.background)
                                 .padding(16.dp)
                         ) {
                             if (isRunningOcr && !ocrTextMap.containsKey(page)) {
-                                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = Color.White)
+                                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.onSurface)
                             } else {
                                 val scrollState = rememberScrollState()
                                 Text(
                                     text = ocrTextMap[page] ?: "No text found.",
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .verticalScroll(scrollState)

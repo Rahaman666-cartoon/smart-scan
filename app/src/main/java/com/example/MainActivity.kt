@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity() {
                     contract = androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult()
                 ) { result ->
                     if (result.resultCode == android.app.Activity.RESULT_OK) {
+                        viewModel.clearActiveSession()
                         val scanResult = com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult.fromActivityResultIntent(result.data)
                         scanResult?.pages?.forEach { page ->
                             try {
