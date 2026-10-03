@@ -207,16 +207,34 @@ fun DocumentPreviewScreen(
                         Text("Share JPG", color = Color.White, style = MaterialTheme.typography.labelSmall)
                     }
 
-                    // Extract Text Option
+                    // Extract Text or Copy Text Option
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.clickable {
-                            selectedTab = 1
+                            if (selectedTab == 0) {
+                                selectedTab = 1
+                            } else {
+                                val textToCopy = ocrTextMap[pagerState.currentPage] ?: ""
+                                if (textToCopy.isNotBlank() && textToCopy != "OCR Failed.") {
+                                    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                    val clip = android.content.ClipData.newPlainText("Scanned Text", textToCopy)
+                                    clipboard.setPrimaryClip(clip)
+                                    Toast.makeText(context, "Text copied to clipboard", Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         }
                     ) {
-                        Icon(Icons.Default.TextFields, contentDescription = "Extract Text", tint = Color.White)
+                        Icon(
+                            if (selectedTab == 0) Icons.Default.TextFields else Icons.Default.ContentCopy,
+                            contentDescription = if (selectedTab == 0) "Extract Text" else "Copy Text",
+                            tint = Color.White
+                        )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("Extract Text", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                        Text(
+                            if (selectedTab == 0) "Extract Text" else "Copy Text",
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelSmall
+                        )
                     }
 
                     // Main Save Button
