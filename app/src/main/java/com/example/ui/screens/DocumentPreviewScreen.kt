@@ -44,6 +44,10 @@ import java.util.Locale
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.gestures.detectTransformGestures
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -556,12 +560,12 @@ fun DocumentPreviewScreen(
                                                     signatureOffset.y.roundToInt()
                                                 ) 
                                             }
-                                            .androidx.compose.ui.graphics.graphicsLayer(
+                                            .graphicsLayer(
                                                 scaleX = effectiveScale,
                                                 scaleY = effectiveScale
                                             )
                                             .pointerInput(Unit) {
-                                                androidx.compose.foundation.gestures.detectTransformGestures { _, pan, zoom, _ ->
+                                                detectTransformGestures { _, pan, zoom, _ ->
                                                     signatureScale *= zoom
                                                     signatureOffset += pan
                                                 }
