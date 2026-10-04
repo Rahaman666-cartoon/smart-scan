@@ -74,55 +74,84 @@ fun DocumentPreviewScreen(
     var showSignatureDialog by remember { mutableStateOf(false) }
     var showSignatureMenu by remember { mutableStateOf(false) }
 
+    var pendingSignature by remember { mutableStateOf<Bitmap?>(null) }
+    var signatureOffset by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
+    var signatureScale by remember { mutableStateOf(1f) }
+    var signaturePage by remember { mutableStateOf(-1) }
+
     val pagerState = rememberPagerState(pageCount = { scannedPages.size })
     
-    fun applySignatureToCurrentPage(sigBitmap: Bitmap) {
-        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+    fun burnSignature(uri: Uri, sigBitmap: Bitmap, boxWidth: Float, boxHeight: Float, offset: androidx.compose.ui.geometry.Offset, effectiveScale: Float, pageIndex: Int) {
+        scope.launch(Dispatchers.IO) {
             try {
-                val currentUri = scannedPages[pagerState.currentPage]
-                val source = android.graphics.ImageDecoder.createSource(context.contentResolver, currentUri)
+                val source = android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
                 val originalBitmap = android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
                     decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
                     decoder.isMutableRequired = true
                 }
-                val mutableBitmap = originalBitmap.copy(Bitmap.Config.ARGB_8888, true)
-                val canvas = Canvas(mutableBitmap)
                 
-                // Scale signature to 30% of original image width
-                val targetSigWidth = mutableBitmap.width * 0.3f
-                val scale = targetSigWidth / sigBitmap.width
-                val targetSigHeight = sigBitmap.height * scale
+                val imgWidth = originalBitmap.width.toFloat()
+                val imgHeight = originalBitmap.height.toFloat()
                 
-                val paddingX = mutableBitmap.width * 0.05f
-                val paddingY = mutableBitmap.height * 0.05f
+                val imageAspectRatio = imgWidth / imgHeight
+                val boxAspectRatio = boxWidth / boxHeight
                 
-                val left = mutableBitmap.width - targetSigWidth - paddingX
-                val top = mutableBitmap.height - targetSigHeight - paddingY
+                var renderedWidth = boxWidth
+                var renderedHeight = boxHeight
+                
+                if (imageAspectRatio > boxAspectRatio) {
+                    renderedHeight = boxWidth / imageAspectRatio
+                } else {
+                    renderedWidth = boxHeight * imageAspectRatio
+                }
+                
+                val scaleX = imgWidth / renderedWidth
+                val scaleY = imgHeight / renderedHeight
+                
+                val imageCenterX = imgWidth / 2f
+                val imageCenterY = imgHeight / 2f
+                
+                val imageOffsetX = offset.x * scaleX
+                val imageOffsetY = offset.y * scaleY
+                
+                val sigCenterX = imageCenterX + imageOffsetX
+                val sigCenterY = imageCenterY + imageOffsetY
+                
+                val targetSigWidth = sigBitmap.width * effectiveScale * scaleX
+                val targetSigHeight = sigBitmap.height * effectiveScale * scaleY
+                
+                val left = sigCenterX - targetSigWidth / 2f
+                val top = sigCenterY - targetSigHeight / 2f
+                
+                val finalBitmap = Bitmap.createBitmap(originalBitmap.width, originalBitmap.height, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(finalBitmap)
+                canvas.drawColor(android.graphics.Color.WHITE)
+                canvas.drawBitmap(originalBitmap, 0f, 0f, null)
                 
                 val destRect = RectF(left, top, left + targetSigWidth, top + targetSigHeight)
-                canvas.drawBitmap(sigBitmap, null, destRect, null)
+                canvas.drawBitmap(sigBitmap, null, destRect, Paint().apply { isFilterBitmap = true })
                 
                 val outDir = File(context.cacheDir, "Signatures")
                 outDir.mkdirs()
                 val outFile = File(outDir, "signed_page_${System.currentTimeMillis()}.jpg")
                 FileOutputStream(outFile).use {
-                    mutableBitmap.compress(Bitmap.CompressFormat.JPEG, 90, it)
+                    finalBitmap.compress(Bitmap.CompressFormat.JPEG, 90, it)
                 }
                 
                 val newUri = androidx.core.content.FileProvider.getUriForFile(context, "${context.applicationContext.packageName}.fileprovider", outFile)
                 
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                    viewModel.updateScannedPage(pagerState.currentPage, newUri)
+                withContext(Dispatchers.Main) {
+                    viewModel.updateScannedPage(pageIndex, newUri)
+                    pendingSignature = null
                     Toast.makeText(context, "Signature applied!", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                    Toast.makeText(context, "Failed to apply signature: ${e.message}", Toast.LENGTH_SHORT).show()
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Error applying signature: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
-
     val createPdfLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/pdf")
     ) { uri: Uri? ->
@@ -165,7 +194,12 @@ fun DocumentPreviewScreen(
                         decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
                         decoder.isMutableRequired = true
                     }
-                    applySignatureToCurrentPage(bitmap)
+                    withContext(Dispatchers.Main) {
+                        pendingSignature = bitmap
+                        signatureOffset = androidx.compose.ui.geometry.Offset.Zero
+                        signatureScale = 1f
+                        signaturePage = pagerState.currentPage
+                    }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
                         Toast.makeText(context, "Failed to load image: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -493,13 +527,79 @@ fun DocumentPreviewScreen(
                     modifier = Modifier.fillMaxSize()
                 ) { page ->
                     if (!isTextMode) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            val boxWidth = constraints.maxWidth.toFloat()
+                            val boxHeight = constraints.maxHeight.toFloat()
+                            
                             coil.compose.AsyncImage(
                                 model = scannedPages[page],
                                 contentDescription = "Page $page",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Fit
                             )
+                            
+                            if (pendingSignature != null && signaturePage == page) {
+                                val sigWidth = pendingSignature!!.width
+                                val sigHeight = pendingSignature!!.height
+                                val initialScale = (boxWidth * 0.4f) / sigWidth
+                                val effectiveScale = initialScale * signatureScale
+                                
+                                Box(modifier = Modifier.fillMaxSize()) {
+                                    Image(
+                                        bitmap = pendingSignature!!.asImageBitmap(),
+                                        contentDescription = "Pending Signature",
+                                        modifier = Modifier
+                                            .align(Alignment.Center)
+                                            .offset { 
+                                                androidx.compose.ui.unit.IntOffset(
+                                                    signatureOffset.x.roundToInt(), 
+                                                    signatureOffset.y.roundToInt()
+                                                ) 
+                                            }
+                                            .androidx.compose.ui.graphics.graphicsLayer(
+                                                scaleX = effectiveScale,
+                                                scaleY = effectiveScale
+                                            )
+                                            .pointerInput(Unit) {
+                                                androidx.compose.foundation.gestures.detectTransformGestures { _, pan, zoom, _ ->
+                                                    signatureScale *= zoom
+                                                    signatureOffset += pan
+                                                }
+                                            }
+                                    )
+                                    
+                                    Row(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomCenter)
+                                            .padding(bottom = 32.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        FloatingActionButton(
+                                            onClick = { pendingSignature = null },
+                                            containerColor = Color.White
+                                        ) {
+                                            Icon(Icons.Default.Close, contentDescription = "Cancel")
+                                        }
+                                        FloatingActionButton(
+                                            onClick = { 
+                                                burnSignature(
+                                                    uri = scannedPages[page], 
+                                                    sigBitmap = pendingSignature!!,
+                                                    boxWidth = boxWidth,
+                                                    boxHeight = boxHeight,
+                                                    offset = signatureOffset,
+                                                    effectiveScale = effectiveScale,
+                                                    pageIndex = page
+                                                )
+                                            },
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            contentColor = MaterialTheme.colorScheme.onPrimary
+                                        ) {
+                                            Icon(Icons.Default.Check, contentDescription = "Apply")
+                                        }
+                                    }
+                                }
+                            }
                         }
                     } else {
                         Box(
@@ -551,7 +651,10 @@ fun DocumentPreviewScreen(
             onDismiss = { showSignatureDialog = false },
             onSignatureReady = { bitmap ->
                 showSignatureDialog = false
-                applySignatureToCurrentPage(bitmap)
+                pendingSignature = bitmap
+                signatureOffset = androidx.compose.ui.geometry.Offset.Zero
+                signatureScale = 1f
+                signaturePage = pagerState.currentPage
             }
         )
     }
