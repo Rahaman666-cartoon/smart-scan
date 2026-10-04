@@ -76,6 +76,53 @@ fun DocumentPreviewScreen(
 
     val pagerState = rememberPagerState(pageCount = { scannedPages.size })
     
+    fun applySignatureToCurrentPage(sigBitmap: Bitmap) {
+        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val currentUri = scannedPages[pagerState.currentPage]
+                val source = android.graphics.ImageDecoder.createSource(context.contentResolver, currentUri)
+                val originalBitmap = android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                    decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+                    decoder.isMutableRequired = true
+                }
+                val mutableBitmap = originalBitmap.copy(Bitmap.Config.ARGB_8888, true)
+                val canvas = Canvas(mutableBitmap)
+                
+                // Scale signature to 30% of original image width
+                val targetSigWidth = mutableBitmap.width * 0.3f
+                val scale = targetSigWidth / sigBitmap.width
+                val targetSigHeight = sigBitmap.height * scale
+                
+                val paddingX = mutableBitmap.width * 0.05f
+                val paddingY = mutableBitmap.height * 0.05f
+                
+                val left = mutableBitmap.width - targetSigWidth - paddingX
+                val top = mutableBitmap.height - targetSigHeight - paddingY
+                
+                val destRect = RectF(left, top, left + targetSigWidth, top + targetSigHeight)
+                canvas.drawBitmap(sigBitmap, null, destRect, null)
+                
+                val outDir = File(context.cacheDir, "Signatures")
+                outDir.mkdirs()
+                val outFile = File(outDir, "signed_page_${System.currentTimeMillis()}.jpg")
+                FileOutputStream(outFile).use {
+                    mutableBitmap.compress(Bitmap.CompressFormat.JPEG, 90, it)
+                }
+                
+                val newUri = androidx.core.content.FileProvider.getUriForFile(context, "${context.applicationContext.packageName}.fileprovider", outFile)
+                
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    viewModel.updateScannedPage(pagerState.currentPage, newUri)
+                    Toast.makeText(context, "Signature applied!", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    Toast.makeText(context, "Failed to apply signature: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
     val createPdfLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/pdf")
     ) { uri: Uri? ->
@@ -128,53 +175,6 @@ fun DocumentPreviewScreen(
         }
     }
     
-    fun applySignatureToCurrentPage(sigBitmap: Bitmap) {
-        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            try {
-                val currentUri = scannedPages[pagerState.currentPage]
-                val source = android.graphics.ImageDecoder.createSource(context.contentResolver, currentUri)
-                val originalBitmap = android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
-                    decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
-                    decoder.isMutableRequired = true
-                }
-                val mutableBitmap = originalBitmap.copy(Bitmap.Config.ARGB_8888, true)
-                val canvas = Canvas(mutableBitmap)
-                
-                // Scale signature to 30% of original image width
-                val targetSigWidth = mutableBitmap.width * 0.3f
-                val scale = targetSigWidth / sigBitmap.width
-                val targetSigHeight = sigBitmap.height * scale
-                
-                val paddingX = mutableBitmap.width * 0.05f
-                val paddingY = mutableBitmap.height * 0.05f
-                
-                val left = mutableBitmap.width - targetSigWidth - paddingX
-                val top = mutableBitmap.height - targetSigHeight - paddingY
-                
-                val destRect = RectF(left, top, left + targetSigWidth, top + targetSigHeight)
-                canvas.drawBitmap(sigBitmap, null, destRect, null)
-                
-                val outDir = File(context.cacheDir, "Signatures")
-                outDir.mkdirs()
-                val outFile = File(outDir, "signed_page_${System.currentTimeMillis()}.jpg")
-                FileOutputStream(outFile).use {
-                    mutableBitmap.compress(Bitmap.CompressFormat.JPEG, 90, it)
-                }
-                
-                val newUri = androidx.core.content.FileProvider.getUriForFile(context, "${context.applicationContext.packageName}.fileprovider", outFile)
-                
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                    viewModel.updateScannedPage(pagerState.currentPage, newUri)
-                    Toast.makeText(context, "Signature applied!", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                    Toast.makeText(context, "Failed to apply signature: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-
     // Auto-run OCR when switching to text tab
     LaunchedEffect(isTextMode, pagerState.currentPage) {
         if (isTextMode && scannedPages.isNotEmpty()) {
