@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.layout.onGloballyPositioned
 
 @Composable
 fun DrawSignatureDialog(
@@ -72,7 +73,7 @@ fun DrawSignatureDialog(
                             )
                         }
                 ) {
-                    Canvas(modifier = Modifier.fillMaxSize().androidx.compose.ui.layout.onGloballyPositioned {
+                    Canvas(modifier = Modifier.fillMaxSize().onGloballyPositioned {
                         canvasSize = androidx.compose.ui.geometry.Size(it.size.width.toFloat(), it.size.height.toFloat())
                     }) {
                         paths.forEach { path ->
