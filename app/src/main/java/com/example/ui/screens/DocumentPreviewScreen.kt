@@ -38,6 +38,12 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
+import java.io.FileOutputStream
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -65,8 +71,56 @@ fun DocumentPreviewScreen(
     var renameInput by remember { mutableStateOf("") }
     
     var showShareSheet by remember { mutableStateOf(false) }
+    var showSignatureDialog by remember { mutableStateOf(false) }
 
     val pagerState = rememberPagerState(pageCount = { scannedPages.size })
+    
+    fun applySignatureToCurrentPage(sigBitmap: Bitmap) {
+        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val currentUri = scannedPages[pagerState.currentPage]
+                val source = android.graphics.ImageDecoder.createSource(context.contentResolver, currentUri)
+                val originalBitmap = android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                    decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+                    decoder.isMutableRequired = true
+                }
+                val mutableBitmap = originalBitmap.copy(Bitmap.Config.ARGB_8888, true)
+                val canvas = Canvas(mutableBitmap)
+                
+                // Scale signature to 30% of original image width
+                val targetSigWidth = mutableBitmap.width * 0.3f
+                val scale = targetSigWidth / sigBitmap.width
+                val targetSigHeight = sigBitmap.height * scale
+                
+                val paddingX = mutableBitmap.width * 0.05f
+                val paddingY = mutableBitmap.height * 0.05f
+                
+                val left = mutableBitmap.width - targetSigWidth - paddingX
+                val top = mutableBitmap.height - targetSigHeight - paddingY
+                
+                val destRect = RectF(left, top, left + targetSigWidth, top + targetSigHeight)
+                canvas.drawBitmap(sigBitmap, null, destRect, null)
+                
+                val outDir = context.getExternalFilesDir("Signatures") ?: context.cacheDir
+                outDir.mkdirs()
+                val outFile = File(outDir, "signed_page_${System.currentTimeMillis()}.jpg")
+                FileOutputStream(outFile).use {
+                    mutableBitmap.compress(Bitmap.CompressFormat.JPEG, 90, it)
+                }
+                
+                val newUri = androidx.core.content.FileProvider.getUriForFile(context, "${context.applicationContext.packageName}.fileprovider", outFile)
+                
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    viewModel.updateScannedPage(pagerState.currentPage, newUri)
+                    Toast.makeText(context, "Signature applied!", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    Toast.makeText(context, "Failed to apply signature: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 
     // Auto-run OCR when switching to text tab
     LaunchedEffect(isTextMode, pagerState.currentPage) {
@@ -123,10 +177,10 @@ fun DocumentPreviewScreen(
             containerColor = Color.White
         ) {
             Column(modifier = Modifier.padding(16.dp).padding(bottom = 32.dp)) {
-                Text("Share as", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 16.dp, bottom = 16.dp))
+                Text("Export", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 16.dp, bottom = 16.dp))
                 
                 ListItem(
-                    headlineContent = { Text("PDF Document") },
+                    headlineContent = { Text("Share PDF Document") },
                     supportingContent = { Text("Share the entire document as a PDF") },
                     leadingContent = { Icon(Icons.Default.PictureAsPdf, null, tint = Color(0xFFD32F2F)) },
                     modifier = Modifier.clickable {
@@ -140,7 +194,7 @@ fun DocumentPreviewScreen(
                                     val file = File(cachePath, "shared_document.pdf")
                                     val quality = viewModel.settingsManager.pdfQuality.value.compression
                                     com.example.utils.PdfUtils.convertUrisToPdf(context, scannedPages, quality, file)
-                                    val uri = FileProvider.getUriForFile(context, "${context.applicationContext.packageName}.fileprovider", file)
+                                    val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.applicationContext.packageName}.fileprovider", file)
                                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                         type = "application/pdf"
                                         putExtra(Intent.EXTRA_STREAM, uri)
@@ -155,9 +209,36 @@ fun DocumentPreviewScreen(
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                 )
+
+                ListItem(
+                    headlineContent = { Text("Save to Device (PDF)") },
+                    supportingContent = { Text("Save the entire document to Downloads") },
+                    leadingContent = { Icon(Icons.Default.Download, null, tint = Color(0xFF388E3C)) },
+                    modifier = Modifier.clickable {
+                        showShareSheet = false
+                        if (scannedPages.isNotEmpty()) {
+                            scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                try {
+                                    val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+                                    val file = File(downloadsDir, "$documentName.pdf")
+                                    val quality = viewModel.settingsManager.pdfQuality.value.compression
+                                    com.example.utils.PdfUtils.convertUrisToPdf(context, scannedPages, quality, file)
+                                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                        Toast.makeText(context, "Saved to Downloads", Toast.LENGTH_SHORT).show()
+                                    }
+                                } catch (e: Exception) {
+                                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                        Toast.makeText(context, "Error saving PDF: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                )
                 
                 ListItem(
-                    headlineContent = { Text("JPG Image") },
+                    headlineContent = { Text("Share JPG Image") },
                     supportingContent = { Text("Share the current page only") },
                     leadingContent = { Icon(Icons.Default.Image, null, tint = Color(0xFF1976D2)) },
                     modifier = Modifier.clickable {
@@ -173,7 +254,7 @@ fun DocumentPreviewScreen(
                                 inputStream?.copyTo(fileOutputStream)
                                 inputStream?.close()
                                 fileOutputStream.close()
-                                val uri = FileProvider.getUriForFile(context, "${context.applicationContext.packageName}.fileprovider", file)
+                                val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.applicationContext.packageName}.fileprovider", file)
                                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                     type = "image/jpeg"
                                     putExtra(Intent.EXTRA_STREAM, uri)
@@ -182,6 +263,49 @@ fun DocumentPreviewScreen(
                                 context.startActivity(Intent.createChooser(shareIntent, "Share JPG"))
                             } catch (e: Exception) {
                                 Toast.makeText(context, "Error sharing JPG", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                )
+
+                ListItem(
+                    headlineContent = { Text("Save to Gallery (JPG)") },
+                    supportingContent = { Text("Save current page to Photos") },
+                    leadingContent = { Icon(Icons.Default.PhotoLibrary, null, tint = Color(0xFFFBC02D)) },
+                    modifier = Modifier.clickable {
+                        showShareSheet = false
+                        if (scannedPages.isNotEmpty()) {
+                            scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                try {
+                                    val currentUri = scannedPages[pagerState.currentPage]
+                                    val source = android.graphics.ImageDecoder.createSource(context.contentResolver, currentUri)
+                                    val bitmap = android.graphics.ImageDecoder.decodeBitmap(source)
+                                    
+                                    val filename = "SmartScan_${System.currentTimeMillis()}.jpg"
+                                    val contentValues = android.content.ContentValues().apply {
+                                        put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                                        put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+                                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                                            put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_PICTURES + "/SmartScan")
+                                        }
+                                    }
+                                    
+                                    val resolver = context.contentResolver
+                                    val uri = resolver.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                                    if (uri != null) {
+                                        resolver.openOutputStream(uri)?.use {
+                                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
+                                        }
+                                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                            Toast.makeText(context, "Saved to Gallery", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                        Toast.makeText(context, "Failed to save: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
                             }
                         }
                     },
@@ -275,6 +399,12 @@ fun DocumentPreviewScreen(
                     )
                     
                     BottomBarButton(
+                        icon = Icons.Default.Create, 
+                        label = "Sign", 
+                        onClick = { showSignatureDialog = true }
+                    )
+                    
+                    BottomBarButton(
                         icon = Icons.Default.DeleteOutline, 
                         label = "Delete", 
                         onClick = {
@@ -288,8 +418,8 @@ fun DocumentPreviewScreen(
                     )
                     
                     BottomBarButton(
-                        icon = Icons.Default.Share, 
-                        label = "Share", 
+                        icon = Icons.Default.IosShare, 
+                        label = "Export", 
                         onClick = { showShareSheet = true }
                     )
                     
@@ -377,6 +507,16 @@ fun DocumentPreviewScreen(
                 }
             }
         }
+    }
+    
+    if (showSignatureDialog) {
+        DrawSignatureDialog(
+            onDismiss = { showSignatureDialog = false },
+            onSignatureReady = { bitmap ->
+                showSignatureDialog = false
+                applySignatureToCurrentPage(bitmap)
+            }
+        )
     }
 }
 
