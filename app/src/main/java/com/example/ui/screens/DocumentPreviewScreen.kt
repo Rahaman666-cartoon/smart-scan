@@ -28,6 +28,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.net.Uri
 import androidx.core.content.FileProvider
 import com.example.ui.MainViewModel
 import kotlinx.coroutines.Dispatchers
@@ -69,8 +72,61 @@ fun DocumentPreviewScreen(
     
     var showShareSheet by remember { mutableStateOf(false) }
     var showSignatureDialog by remember { mutableStateOf(false) }
+    var showSignatureMenu by remember { mutableStateOf(false) }
 
     val pagerState = rememberPagerState(pageCount = { scannedPages.size })
+    
+    val createPdfLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/pdf")
+    ) { uri: Uri? ->
+        if (uri != null && scannedPages.isNotEmpty()) {
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val cachePath = File(context.cacheDir, "temp_pdf")
+                    cachePath.mkdirs()
+                    val tempFile = File(cachePath, "export.pdf")
+                    val quality = viewModel.settingsManager.pdfQuality.value.compression
+                    com.example.utils.PdfUtils.convertUrisToPdf(context, scannedPages, quality, tempFile)
+                    
+                    context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                        tempFile.inputStream().use { inputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+                    }
+                    tempFile.delete()
+                    
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, "Saved to Device", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, "Error saving PDF: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
+    
+    val importSignatureLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val source = android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
+                    val bitmap = android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                        decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+                        decoder.isMutableRequired = true
+                    }
+                    applySignatureToCurrentPage(bitmap)
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, "Failed to load image: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
     
     fun applySignatureToCurrentPage(sigBitmap: Bitmap) {
         scope.launch(kotlinx.coroutines.Dispatchers.IO) {
@@ -98,7 +154,7 @@ fun DocumentPreviewScreen(
                 val destRect = RectF(left, top, left + targetSigWidth, top + targetSigHeight)
                 canvas.drawBitmap(sigBitmap, null, destRect, null)
                 
-                val outDir = context.getExternalFilesDir("Signatures") ?: context.cacheDir
+                val outDir = File(context.cacheDir, "Signatures")
                 outDir.mkdirs()
                 val outFile = File(outDir, "signed_page_${System.currentTimeMillis()}.jpg")
                 FileOutputStream(outFile).use {
@@ -213,23 +269,7 @@ fun DocumentPreviewScreen(
                     leadingContent = { Icon(Icons.Default.Download, null, tint = Color(0xFF388E3C)) },
                     modifier = Modifier.clickable {
                         showShareSheet = false
-                        if (scannedPages.isNotEmpty()) {
-                            scope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                                try {
-                                    val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
-                                    val file = File(downloadsDir, "$documentName.pdf")
-                                    val quality = viewModel.settingsManager.pdfQuality.value.compression
-                                    com.example.utils.PdfUtils.convertUrisToPdf(context, scannedPages, quality, file)
-                                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                                        Toast.makeText(context, "Saved to Downloads", Toast.LENGTH_SHORT).show()
-                                    }
-                                } catch (e: Exception) {
-                                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                                        Toast.makeText(context, "Error saving PDF: ${e.message}", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                            }
-                        }
+                        createPdfLauncher.launch("$documentName.pdf")
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                 )
@@ -398,7 +438,7 @@ fun DocumentPreviewScreen(
                     BottomBarButton(
                         icon = Icons.Default.Create, 
                         label = "Sign", 
-                        onClick = { showSignatureDialog = true }
+                        onClick = { showSignatureMenu = true }
                     )
                     
                     BottomBarButton(
@@ -514,6 +554,47 @@ fun DocumentPreviewScreen(
                 applySignatureToCurrentPage(bitmap)
             }
         )
+    }
+    
+    if (showSignatureMenu) {
+        ModalBottomSheet(
+            onDismissRequest = { showSignatureMenu = false },
+            containerColor = Color.White
+        ) {
+            Column(modifier = Modifier.padding(16.dp).padding(bottom = 32.dp)) {
+                Text("Signature function", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 16.dp, bottom = 16.dp))
+                
+                ListItem(
+                    headlineContent = { Text("Add signature") },
+                    leadingContent = { Icon(Icons.Default.Create, null, tint = Color.Black) },
+                    modifier = Modifier.clickable {
+                        showSignatureMenu = false
+                        showSignatureDialog = true
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                )
+                
+                ListItem(
+                    headlineContent = { Text("Scan your signature") },
+                    leadingContent = { Icon(Icons.Default.CameraAlt, null, tint = Color.Black) },
+                    modifier = Modifier.clickable {
+                        showSignatureMenu = false
+                        Toast.makeText(context, "Coming soon!", Toast.LENGTH_SHORT).show()
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                )
+                
+                ListItem(
+                    headlineContent = { Text("Import from Album") },
+                    leadingContent = { Icon(Icons.Default.PhotoLibrary, null, tint = Color.Black) },
+                    modifier = Modifier.clickable {
+                        showSignatureMenu = false
+                        importSignatureLauncher.launch("image/*")
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                )
+            }
+        }
     }
 }
 
