@@ -138,7 +138,8 @@ fun DocumentPreviewScreen(
                                     val cachePath = File(context.cacheDir, "shared_docs")
                                     cachePath.mkdirs()
                                     val file = File(cachePath, "shared_document.pdf")
-                                    com.example.utils.PdfUtils.convertUrisToPdf(context, scannedPages, 100, file)
+                                    val quality = viewModel.settingsManager.pdfQuality.value.compression
+                                    com.example.utils.PdfUtils.convertUrisToPdf(context, scannedPages, quality, file)
                                     val uri = FileProvider.getUriForFile(context, "${context.applicationContext.packageName}.fileprovider", file)
                                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                         type = "application/pdf"
@@ -191,7 +192,7 @@ fun DocumentPreviewScreen(
     }
 
     Scaffold(
-        containerColor = Color(0xFFF8F9FA),
+        containerColor = Color(0xFF121212),
         topBar = {
             TopAppBar(
                 title = { 
@@ -244,17 +245,15 @@ fun DocumentPreviewScreen(
             )
         },
         bottomBar = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
+            BottomAppBar(
+                containerColor = Color.White,
+                contentColor = Color(0xFF1E1E1E),
+                tonalElevation = 0.dp
             ) {
-                Divider(color = Color(0xFFEEEEEE), thickness = 1.dp)
-                
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 12.dp, horizontal = 8.dp),
+                        .padding(horizontal = 8.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -317,25 +316,21 @@ fun DocumentPreviewScreen(
         Box(modifier = Modifier
             .fillMaxSize()
             .padding(padding)
-            .background(Color(0xFFF0F0F0))) { 
+            .background(Color(0xFF121212))) { 
             
             if (scannedPages.isEmpty()) {
-                Text("No pages scanned", color = Color(0xFF1E1E1E), modifier = Modifier.align(Alignment.Center))
+                Text("No pages scanned", color = Color.White, modifier = Modifier.align(Alignment.Center))
             } else {
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize()
                 ) { page ->
                     if (!isTextMode) {
-                        Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             coil.compose.AsyncImage(
                                 model = scannedPages[page],
                                 contentDescription = "Page $page",
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .shadow(4.dp, RoundedCornerShape(8.dp))
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(Color.White),
+                                modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Fit
                             )
                         }
