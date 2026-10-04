@@ -48,6 +48,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.gestures.detectTransformGestures
 import kotlin.math.roundToInt
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.IntOffset
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -79,13 +81,13 @@ fun DocumentPreviewScreen(
     var showSignatureMenu by remember { mutableStateOf(false) }
 
     var pendingSignature by remember { mutableStateOf<Bitmap?>(null) }
-    var signatureOffset by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
+    var signatureOffset by remember { mutableStateOf(Offset.Zero) }
     var signatureScale by remember { mutableStateOf(1f) }
     var signaturePage by remember { mutableStateOf(-1) }
 
     val pagerState = rememberPagerState(pageCount = { scannedPages.size })
     
-    fun burnSignature(uri: Uri, sigBitmap: Bitmap, boxWidth: Float, boxHeight: Float, offset: androidx.compose.ui.geometry.Offset, effectiveScale: Float, pageIndex: Int) {
+    fun burnSignature(uri: Uri, sigBitmap: Bitmap, boxWidth: Float, boxHeight: Float, offset: Offset, effectiveScale: Float, pageIndex: Int) {
         scope.launch(Dispatchers.IO) {
             try {
                 val source = android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
@@ -200,7 +202,7 @@ fun DocumentPreviewScreen(
                     }
                     withContext(Dispatchers.Main) {
                         pendingSignature = bitmap
-                        signatureOffset = androidx.compose.ui.geometry.Offset.Zero
+                        signatureOffset = Offset.Zero
                         signatureScale = 1f
                         signaturePage = pagerState.currentPage
                     }
@@ -555,7 +557,7 @@ fun DocumentPreviewScreen(
                                         modifier = Modifier
                                             .align(Alignment.Center)
                                             .offset { 
-                                                androidx.compose.ui.unit.IntOffset(
+                                                IntOffset(
                                                     signatureOffset.x.roundToInt(), 
                                                     signatureOffset.y.roundToInt()
                                                 ) 
@@ -656,7 +658,7 @@ fun DocumentPreviewScreen(
             onSignatureReady = { bitmap ->
                 showSignatureDialog = false
                 pendingSignature = bitmap
-                signatureOffset = androidx.compose.ui.geometry.Offset.Zero
+                signatureOffset = Offset.Zero
                 signatureScale = 1f
                 signaturePage = pagerState.currentPage
             }
