@@ -576,7 +576,7 @@ fun DocumentPreviewScreen(
                 
                 ListItem(
                     headlineContent = { Text("Scan your signature") },
-                    leadingContent = { Icon(Icons.Default.CameraAlt, null, tint = Color.Black) },
+                    leadingContent = { Icon(Icons.Default.Add, null, tint = Color.Black) },
                     modifier = Modifier.clickable {
                         showSignatureMenu = false
                         Toast.makeText(context, "Coming soon!", Toast.LENGTH_SHORT).show()
@@ -586,7 +586,7 @@ fun DocumentPreviewScreen(
                 
                 ListItem(
                     headlineContent = { Text("Import from Album") },
-                    leadingContent = { Icon(Icons.Default.PhotoLibrary, null, tint = Color.Black) },
+                    leadingContent = { Icon(Icons.Default.Add, null, tint = Color.Black) },
                     modifier = Modifier.clickable {
                         showSignatureMenu = false
                         importSignatureLauncher.launch("image/*")
