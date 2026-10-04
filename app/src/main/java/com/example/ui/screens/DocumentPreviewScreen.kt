@@ -145,7 +145,7 @@ fun DocumentPreviewScreen(
                     finalBitmap.compress(Bitmap.CompressFormat.JPEG, 90, it)
                 }
                 
-                val newUri = androidx.core.content.FileProvider.getUriForFile(context, "${context.applicationContext.packageName}.fileprovider", outFile)
+                val newUri = android.net.Uri.fromFile(outFile)
                 
                 withContext(Dispatchers.Main) {
                     viewModel.updateScannedPage(pageIndex, newUri)
@@ -190,6 +190,74 @@ fun DocumentPreviewScreen(
         }
     }
     
+    fun processSignature(bitmap: Bitmap): Bitmap {
+        try {
+            val width = bitmap.width
+            val height = bitmap.height
+            val pixels = IntArray(width * height)
+            bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+            
+            var minX = width
+            var minY = height
+            var maxX = -1
+            var maxY = -1
+            
+            val threshold = 160
+            
+            for (y in 0 until height) {
+                for (x in 0 until width) {
+                    val index = y * width + x
+                    val pixel = pixels[index]
+                    val alpha = android.graphics.Color.alpha(pixel)
+                    
+                    if (alpha < 50) {
+                        pixels[index] = android.graphics.Color.TRANSPARENT
+                        continue
+                    }
+                    
+                    val r = android.graphics.Color.red(pixel)
+                    val g = android.graphics.Color.green(pixel)
+                    val b = android.graphics.Color.blue(pixel)
+                    val intensity = (r + g + b) / 3
+                    
+                    if (intensity < threshold) {
+                        pixels[index] = android.graphics.Color.argb(alpha, 0, 0, 0)
+                        if (x < minX) minX = x
+                        if (x > maxX) maxX = x
+                        if (y < minY) minY = y
+                        if (y > maxY) maxY = y
+                    } else {
+                        pixels[index] = android.graphics.Color.TRANSPARENT
+                    }
+                }
+            }
+            
+            if (maxX < minX || maxY < minY) return bitmap
+            
+            val padding = 40
+            minX = maxOf(0, minX - padding)
+            minY = maxOf(0, minY - padding)
+            maxX = minOf(width - 1, maxX + padding)
+            maxY = minOf(height - 1, maxY + padding)
+            
+            val croppedWidth = maxX - minX + 1
+            val croppedHeight = maxY - minY + 1
+            
+            val result = Bitmap.createBitmap(croppedWidth, croppedHeight, Bitmap.Config.ARGB_8888)
+            val croppedPixels = IntArray(croppedWidth * croppedHeight)
+            for (y in 0 until croppedHeight) {
+                System.arraycopy(pixels, (y + minY) * width + minX, croppedPixels, y * croppedWidth, croppedWidth)
+            }
+            result.setPixels(croppedPixels, 0, croppedWidth, 0, 0, croppedWidth, croppedHeight)
+            
+            return result
+        } catch (e: Exception) {
+            return bitmap
+        } catch (e: OutOfMemoryError) {
+            return bitmap
+        }
+    }
+
     val importSignatureLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -197,10 +265,11 @@ fun DocumentPreviewScreen(
             scope.launch(Dispatchers.IO) {
                 try {
                     val source = android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
-                    val bitmap = android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                    val originalBitmap = android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
                         decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
                         decoder.isMutableRequired = true
                     }
+                    val bitmap = processSignature(originalBitmap)
                     withContext(Dispatchers.Main) {
                         pendingSignature = bitmap
                         signatureOffset = Offset.Zero
@@ -570,7 +639,7 @@ fun DocumentPreviewScreen(
                                             .pointerInput(Unit) {
                                                 detectTransformGestures { _, pan, zoom, _ ->
                                                     signatureScale *= zoom
-                                                    signatureOffset += pan
+                                                    signatureOffset += Offset(pan.x / effectiveScale, pan.y / effectiveScale)
                                                 }
                                             }
                                     )
