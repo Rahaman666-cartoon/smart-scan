@@ -245,24 +245,20 @@ class MainActivity : ComponentActivity() {
                                         onNavigateToCrop = { bitmap -> 
                                             kotlin.concurrent.thread {
                                                 try {
-                                                    // Auto-crop imported image using OpenCV
+                                                    // Detect corners to pre-fill crop screen
                                                     val points = com.example.utils.ImageUtils.detectDocumentCorners(bitmap)
-                                                    val finalBitmap = if (points.size == 4) {
-                                                        com.example.utils.ImageUtils.cropAndWarpPerspective(bitmap, points[0], points[1], points[2], points[3])
-                                                    } else {
-                                                        bitmap
-                                                    }
-                                                    
-                                                    val tempFile = java.io.File(cacheDir, "imported_${System.currentTimeMillis()}.jpg")
-                                                    java.io.FileOutputStream(tempFile).use { out ->
-                                                        finalBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
-                                                    }
                                                     runOnUiThread {
-                                                        viewModel.addScannedPage(android.net.Uri.fromFile(tempFile))
-                                                        navController.navigate("document_preview")
+                                                        viewModel.cropBitmap = bitmap
+                                                        viewModel.cropPoints = if (points.size == 4) points else null
+                                                        navController.navigate("crop_screen")
                                                     }
                                                 } catch (e: Exception) {
                                                     e.printStackTrace()
+                                                    runOnUiThread {
+                                                        viewModel.cropBitmap = bitmap
+                                                        viewModel.cropPoints = null
+                                                        navController.navigate("crop_screen")
+                                                    }
                                                 }
                                             }
                                         }
@@ -276,6 +272,49 @@ class MainActivity : ComponentActivity() {
                                     )
                                     2 -> SettingsScreen(viewModel = viewModel)
                                 }
+                            }
+                        }
+                    }
+
+                    composable(
+                        "crop_screen",
+                        enterTransition = { slideIntoContainer(androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Up) + androidx.compose.animation.fadeIn() },
+                        exitTransition = { slideOutOfContainer(androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Down) + androidx.compose.animation.fadeOut() },
+                        popEnterTransition = { slideIntoContainer(androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Up) + androidx.compose.animation.fadeIn() },
+                        popExitTransition = { slideOutOfContainer(androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection.Down) + androidx.compose.animation.fadeOut() }
+                    ) {
+                        val bitmap = viewModel.cropBitmap
+                        if (bitmap != null) {
+                            com.example.ui.screens.CropScreen(
+                                bitmap = bitmap,
+                                initialPoints = viewModel.cropPoints,
+                                onCrop = { croppedBitmap ->
+                                    kotlin.concurrent.thread {
+                                        try {
+                                            val tempFile = java.io.File(cacheDir, "imported_${System.currentTimeMillis()}.jpg")
+                                            java.io.FileOutputStream(tempFile).use { out ->
+                                                croppedBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
+                                            }
+                                            runOnUiThread {
+                                                viewModel.addScannedPage(android.net.Uri.fromFile(tempFile))
+                                                navController.navigate("document_preview") {
+                                                    popUpTo("dashboard") { inclusive = false }
+                                                }
+                                                viewModel.cropBitmap = null
+                                                viewModel.cropPoints = null
+                                            }
+                                        } catch(e: Exception) { e.printStackTrace() }
+                                    }
+                                },
+                                onCancel = {
+                                    viewModel.cropBitmap = null
+                                    viewModel.cropPoints = null
+                                    navController.navigateUp()
+                                }
+                            )
+                        } else {
+                            androidx.compose.runtime.LaunchedEffect(Unit) {
+                                navController.navigateUp()
                             }
                         }
                     }
@@ -330,4 +369,5 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
 
