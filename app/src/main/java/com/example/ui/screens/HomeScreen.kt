@@ -49,7 +49,6 @@ fun HomeScreen(
     onNavigateToCamera: () -> Unit,
     onNavigateToBarcode: () -> Unit,
     onNavigateToDocument: (com.example.data.DocumentWithPages) -> Unit,
-    onNavigateToMerge: () -> Unit,
     onNavigateToCrop: (Bitmap) -> Unit
 ) {
     val context = LocalContext.current
