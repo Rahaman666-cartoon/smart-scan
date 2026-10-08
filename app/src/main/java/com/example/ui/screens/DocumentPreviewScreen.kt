@@ -258,30 +258,57 @@ fun DocumentPreviewScreen(
         }
     }
 
-    val importSignatureLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            scope.launch(Dispatchers.IO) {
-                try {
-                    val source = android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
-                    val originalBitmap = android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
-                        decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
-                        decoder.isMutableRequired = true
-                    }
-                    val bitmap = processSignature(originalBitmap)
-                    withContext(Dispatchers.Main) {
-                        pendingSignature = bitmap
-                        signatureOffset = Offset.Zero
-                        signatureScale = 1f
-                        signaturePage = pagerState.currentPage
-                    }
-                } catch (e: Exception) {
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "Failed to load image: ${e.message}", Toast.LENGTH_SHORT).show()
+    val scanSignatureLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val scanResult = com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult.fromActivityResultIntent(result.data)
+            val page = scanResult?.pages?.firstOrNull()
+            if (page != null) {
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        val source = android.graphics.ImageDecoder.createSource(context.contentResolver, page.imageUri)
+                        val originalBitmap = android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                            decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+                            decoder.isMutableRequired = true
+                        }
+                        val bitmap = processSignature(originalBitmap)
+                        withContext(Dispatchers.Main) {
+                            pendingSignature = bitmap
+                            signatureOffset = Offset.Zero
+                            signatureScale = 1f
+                            signaturePage = pagerState.currentPage
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, "Failed to load image: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
             }
+        }
+    }
+
+    val launchSignatureScanner = {
+        val activity = generateSequence(context) { (it as? android.content.ContextWrapper)?.baseContext }
+            .firstOrNull { it is android.app.Activity } as? android.app.Activity
+            
+        if (activity != null) {
+            val options = com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.Builder()
+                .setGalleryImportAllowed(true)
+                .setPageLimit(1)
+                .setResultFormats(com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+                .setScannerMode(com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+                .build()
+            
+            com.google.mlkit.vision.documentscanner.GmsDocumentScanning.getClient(options)
+                .getStartScanIntent(activity)
+                .addOnSuccessListener { intentSender ->
+                    scanSignatureLauncher.launch(androidx.activity.result.IntentSenderRequest.Builder(intentSender).build())
+                }
+                .addOnFailureListener { e ->
+                    Toast.makeText(activity, "Scanner failed: ${e.message}", Toast.LENGTH_LONG).show()
+                }
         }
     }
     
@@ -626,22 +653,20 @@ fun DocumentPreviewScreen(
                                         contentDescription = "Pending Signature",
                                         modifier = Modifier
                                             .align(Alignment.Center)
-                                            .offset { 
-                                                IntOffset(
-                                                    signatureOffset.x.roundToInt(), 
-                                                    signatureOffset.y.roundToInt()
-                                                ) 
+                                            .pointerInput(Unit) {
+                                                detectTransformGestures { _, pan, zoom, _ ->
+                                                    // dampen zoom slightly for better control
+                                                    val dampenedZoom = 1f + (zoom - 1f) * 0.5f
+                                                    signatureScale *= dampenedZoom
+                                                    signatureOffset += pan
+                                                }
                                             }
                                             .graphicsLayer(
                                                 scaleX = effectiveScale,
-                                                scaleY = effectiveScale
+                                                scaleY = effectiveScale,
+                                                translationX = signatureOffset.x,
+                                                translationY = signatureOffset.y
                                             )
-                                            .pointerInput(Unit) {
-                                                detectTransformGestures { _, pan, zoom, _ ->
-                                                    signatureScale *= zoom
-                                                    signatureOffset += Offset(pan.x / effectiveScale, pan.y / effectiveScale)
-                                                }
-                                            }
                                     )
                                     
                                     Row(
@@ -758,7 +783,7 @@ fun DocumentPreviewScreen(
                     leadingContent = { Icon(Icons.Default.Add, null, tint = Color.Black) },
                     modifier = Modifier.clickable {
                         showSignatureMenu = false
-                        Toast.makeText(context, "Coming soon!", Toast.LENGTH_SHORT).show()
+                        launchSignatureScanner()
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                 )
@@ -768,7 +793,7 @@ fun DocumentPreviewScreen(
                     leadingContent = { Icon(Icons.Default.Add, null, tint = Color.Black) },
                     modifier = Modifier.clickable {
                         showSignatureMenu = false
-                        importSignatureLauncher.launch("image/*")
+                        launchSignatureScanner()
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                 )
