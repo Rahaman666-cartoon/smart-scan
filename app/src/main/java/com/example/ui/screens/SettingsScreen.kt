@@ -29,7 +29,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
     val themeMode by viewModel.settingsManager.themeMode.collectAsState()
     val themeAccent by viewModel.settingsManager.themeAccent.collectAsState()
     val pdfQuality by viewModel.settingsManager.pdfQuality.collectAsState()
-    val appLanguage by viewModel.settingsManager.language.collectAsState()
+
 
     Scaffold(
         topBar = {
@@ -184,48 +184,6 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 }
             }
 
-            // Localization
-            item {
-                SettingsSectionTitle("Localization")
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha=0.05f)),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(24.dp)
-                ) {
-                    Column(modifier = Modifier.padding(24.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(36.dp).background(Color(0xFFE8F5E9), CircleShape), contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.Language, null, tint = Color(0xFF388E3C))
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text("App Language", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
-                        }
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            listOf("en" to "English", "es" to "Spanish", "fr" to "French").forEach { (code, name) ->
-                                FilterChip(
-                                    selected = appLanguage == code,
-                                    onClick = { viewModel.settingsManager.setLanguage(code) },
-                                    label = { Text(name) },
-                                    modifier = Modifier.weight(1f),
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                        selectedLabelColor = MaterialTheme.colorScheme.primary
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
-            }
 
             // About
             item {

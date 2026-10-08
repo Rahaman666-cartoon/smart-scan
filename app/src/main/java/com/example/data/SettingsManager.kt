@@ -29,8 +29,7 @@ class SettingsManager(context: Context) {
     private val _pdfQuality = MutableStateFlow(getPdfQuality())
     val pdfQuality: StateFlow<PdfQuality> = _pdfQuality
 
-    private val _language = MutableStateFlow(getLanguage())
-    val language: StateFlow<String> = _language
+
 
     private val _userName = MutableStateFlow(getUserName())
     val userName: StateFlow<String> = _userName
@@ -71,14 +70,7 @@ class SettingsManager(context: Context) {
         _pdfQuality.value = quality
     }
 
-    fun getLanguage(): String {
-        return prefs.getString("app_language", "en") ?: "en"
-    }
 
-    fun setLanguage(langCode: String) {
-        prefs.edit().putString("app_language", langCode).apply()
-        _language.value = langCode
-    }
 
     fun getUserName(): String {
         return prefs.getString("user_name", "SmartScan Pro") ?: "SmartScan Pro"
