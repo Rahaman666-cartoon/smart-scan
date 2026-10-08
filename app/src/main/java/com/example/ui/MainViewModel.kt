@@ -113,6 +113,10 @@ class MainViewModel @Inject constructor(
     fun clearBarcodeResult() {
         _barcodeResult.value = null
     }
+    
+    fun setBarcodeResult(result: MlKitUtils.BarcodeResult) {
+        _barcodeResult.value = result
+    }
 
     fun clearFileMessage() {
         _fileOperationMessage.value = null

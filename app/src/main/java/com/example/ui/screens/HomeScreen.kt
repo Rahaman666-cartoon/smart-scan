@@ -500,28 +500,111 @@ fun HomeScreen(
     }
 
     if (barcodeResult != null) {
-        AlertDialog(
+        val result = barcodeResult!!
+        ModalBottomSheet(
             onDismissRequest = { viewModel.clearBarcodeResult() },
-            title = { Text("Barcode Scanned") },
-            text = {
-                Column {
-                    Text("Format: ${getBarcodeFormatName(barcodeResult!!.format)}", fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(
-                            text = barcodeResult!!.rawValue,
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
+            containerColor = Color.White
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+                    .padding(bottom = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Determine icon and title based on valueType
+                val (icon, title, actionText) = when (result.valueType) {
+                    com.google.mlkit.vision.barcode.common.Barcode.TYPE_URL -> Triple(Icons.Default.Link, "Website Link", "Open in Browser")
+                    com.google.mlkit.vision.barcode.common.Barcode.TYPE_WIFI -> Triple(Icons.Default.Wifi, "WiFi Network", "Copy Password")
+                    com.google.mlkit.vision.barcode.common.Barcode.TYPE_CONTACT_INFO -> Triple(Icons.Default.Contacts, "Contact Card", "Copy Contact")
+                    else -> Triple(Icons.Default.QrCode, "Scanned Code", "Copy Text")
                 }
-            },
-            confirmButton = {
-                Button(onClick = { viewModel.clearBarcodeResult() }) { Text("Done") }
+
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Surface(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                    color = Color(0xFFF8F9FA),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        text = result.displayValue.takeIf { it.isNotBlank() } ?: result.rawValue,
+                        modifier = Modifier.padding(16.dp),
+                        textAlign = TextAlign.Center,
+                        color = Color(0xFF1E1E1E),
+                        fontSize = 16.sp
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                Button(
+                    onClick = {
+                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        val clip = android.content.ClipData.newPlainText("Scanned Content", result.rawValue)
+                        
+                        when (result.valueType) {
+                            com.google.mlkit.vision.barcode.common.Barcode.TYPE_URL -> {
+                                try {
+                                    val url = result.url ?: result.rawValue
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    clipboard.setPrimaryClip(clip)
+                                    Toast.makeText(context, "Could not open link. Copied to clipboard.", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            com.google.mlkit.vision.barcode.common.Barcode.TYPE_WIFI -> {
+                                clipboard.setPrimaryClip(clip)
+                                Toast.makeText(context, "Details copied to clipboard", Toast.LENGTH_SHORT).show()
+                            }
+                            else -> {
+                                clipboard.setPrimaryClip(clip)
+                                Toast.makeText(context, "Text copied to clipboard", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        viewModel.clearBarcodeResult()
+                    },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text(actionText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                OutlinedButton(
+                    onClick = {
+                        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(android.content.Intent.EXTRA_TEXT, result.rawValue)
+                        }
+                        context.startActivity(android.content.Intent.createChooser(shareIntent, "Share via"))
+                    },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE0E0E0)),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF1E1E1E))
+                ) {
+                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Share", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                }
             }
-        )
+        }
     }
 }

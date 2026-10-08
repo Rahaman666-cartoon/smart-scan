@@ -139,6 +139,27 @@ class MainActivity : ComponentActivity() {
                         }
                 }
 
+                val launchBarcodeScanner: () -> Unit = {
+                    val options = com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions.Builder()
+                        .setBarcodeFormats(com.google.mlkit.vision.barcode.common.Barcode.FORMAT_ALL_FORMATS)
+                        .build()
+                    val scanner = com.google.mlkit.vision.codescanner.GmsBarcodeScanning.getClient(activity, options)
+                    scanner.startScan()
+                        .addOnSuccessListener { barcode ->
+                            val result = com.example.utils.MlKitUtils.BarcodeResult(
+                                rawValue = barcode.rawValue ?: "",
+                                displayValue = barcode.displayValue ?: "",
+                                format = barcode.format,
+                                valueType = barcode.valueType,
+                                url = barcode.url?.url
+                            )
+                            viewModel.setBarcodeResult(result)
+                        }
+                        .addOnFailureListener { e ->
+                            // Optional: handle failure (e.g., user cancelled)
+                        }
+                }
+                
                 fun openPdfDocument(context: android.content.Context, doc: com.example.data.DocumentEntity) {
                     try {
                         val file = java.io.File(doc.filePath)
@@ -215,7 +236,7 @@ class MainActivity : ComponentActivity() {
                                     0 -> HomeScreen(
                                         viewModel = viewModel,
                                         onNavigateToCamera = { launchScanner(false, -1) },
-                                        onNavigateToBarcode = { launchScanner(false, -1) },
+                                        onNavigateToBarcode = { launchBarcodeScanner() },
                                         onNavigateToDocument = { doc -> 
                                             viewModel.loadExistingDocumentForPreview(doc)
                                             navController.navigate("document_preview")
