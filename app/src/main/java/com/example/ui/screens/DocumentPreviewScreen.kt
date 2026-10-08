@@ -84,11 +84,12 @@ fun DocumentPreviewScreen(
     var pendingSignature by remember { mutableStateOf<Bitmap?>(null) }
     var signatureOffset by remember { mutableStateOf(Offset.Zero) }
     var signatureScale by remember { mutableStateOf(1f) }
+    var signatureRotation by remember { mutableStateOf(0f) }
     var signaturePage by remember { mutableStateOf(-1) }
 
     val pagerState = rememberPagerState(pageCount = { scannedPages.size })
     
-    fun burnSignature(uri: Uri, sigBitmap: Bitmap, boxWidth: Float, boxHeight: Float, offset: Offset, effectiveScale: Float, pageIndex: Int) {
+    fun burnSignature(uri: Uri, sigBitmap: Bitmap, boxWidth: Float, boxHeight: Float, offset: Offset, effectiveScale: Float, rotationDegrees: Float, pageIndex: Int) {
         scope.launch(Dispatchers.IO) {
             try {
                 val source = android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
@@ -127,16 +128,18 @@ fun DocumentPreviewScreen(
                 val targetSigWidth = sigBitmap.width * effectiveScale * scaleX
                 val targetSigHeight = sigBitmap.height * effectiveScale * scaleY
                 
-                val left = sigCenterX - targetSigWidth / 2f
-                val top = sigCenterY - targetSigHeight / 2f
-                
                 val finalBitmap = Bitmap.createBitmap(originalBitmap.width, originalBitmap.height, Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(finalBitmap)
                 canvas.drawColor(android.graphics.Color.WHITE)
                 canvas.drawBitmap(originalBitmap, 0f, 0f, null)
                 
-                val destRect = RectF(left, top, left + targetSigWidth, top + targetSigHeight)
-                canvas.drawBitmap(sigBitmap, null, destRect, Paint().apply { isFilterBitmap = true })
+                val matrix = android.graphics.Matrix()
+                matrix.postTranslate(-sigBitmap.width / 2f, -sigBitmap.height / 2f)
+                matrix.postScale(effectiveScale * scaleX, effectiveScale * scaleY)
+                matrix.postRotate(rotationDegrees)
+                matrix.postTranslate(sigCenterX, sigCenterY)
+                
+                canvas.drawBitmap(sigBitmap, matrix, Paint().apply { isFilterBitmap = true })
                 
                 val outDir = File(context.cacheDir, "Signatures")
                 outDir.mkdirs()
@@ -277,6 +280,7 @@ fun DocumentPreviewScreen(
                             pendingSignature = bitmap
                             signatureOffset = Offset.Zero
                             signatureScale = 1f
+                            signatureRotation = 0f
                             signaturePage = pagerState.currentPage
                         }
                     } catch (e: Exception) {
@@ -627,6 +631,7 @@ fun DocumentPreviewScreen(
             } else {
                 HorizontalPager(
                     state = pagerState,
+                    userScrollEnabled = pendingSignature == null,
                     modifier = Modifier.fillMaxSize()
                 ) { page ->
                     if (!isTextMode) {
@@ -654,19 +659,33 @@ fun DocumentPreviewScreen(
                                         modifier = Modifier
                                             .align(Alignment.Center)
                                             .pointerInput(Unit) {
-                                                detectTransformGestures { _, pan, zoom, _ ->
+                                                detectTransformGestures { _, pan, zoom, rotation ->
                                                     // dampen zoom slightly for better control
                                                     val dampenedZoom = 1f + (zoom - 1f) * 0.5f
                                                     signatureScale *= dampenedZoom
+                                                    signatureRotation += rotation
                                                     signatureOffset += pan
                                                 }
                                             }
                                             .graphicsLayer(
                                                 scaleX = effectiveScale,
                                                 scaleY = effectiveScale,
+                                                rotationZ = signatureRotation,
                                                 translationX = signatureOffset.x,
                                                 translationY = signatureOffset.y
                                             )
+                                    )
+                                    
+                                    // Visual Hint for user
+                                    Text(
+                                        text = "Drag to move • Pinch to scale & rotate",
+                                        color = Color.White,
+                                        fontSize = 12.sp,
+                                        modifier = Modifier
+                                            .align(Alignment.TopCenter)
+                                            .padding(top = 16.dp)
+                                            .background(Color.Black.copy(alpha = 0.5f), shape = RoundedCornerShape(16.dp))
+                                            .padding(horizontal = 12.dp, vertical = 6.dp)
                                     )
                                     
                                     Row(
@@ -690,6 +709,7 @@ fun DocumentPreviewScreen(
                                                     boxHeight = boxHeight,
                                                     offset = signatureOffset,
                                                     effectiveScale = effectiveScale,
+                                                    rotationDegrees = signatureRotation,
                                                     pageIndex = page
                                                 )
                                             },
@@ -755,6 +775,7 @@ fun DocumentPreviewScreen(
                 pendingSignature = bitmap
                 signatureOffset = Offset.Zero
                 signatureScale = 1f
+                signatureRotation = 0f
                 signaturePage = pagerState.currentPage
             }
         )
