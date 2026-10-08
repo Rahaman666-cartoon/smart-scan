@@ -59,6 +59,7 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
 
     var showSaveDialog by remember { mutableStateOf(false) }
+    var showProfileSheet by remember { mutableStateOf(false) }
     var documentNameInput by remember { mutableStateOf("") }
     var searchQuery by remember { mutableStateOf("") }
     val dateFormatter = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
@@ -154,7 +155,7 @@ fun HomeScreen(
                                 .size(56.dp)
                                 .clip(CircleShape)
                                 .background(Color.White.copy(alpha = 0.2f))
-                                .clickable { /* profile */ },
+                                .clickable { showProfileSheet = true },
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -603,6 +604,136 @@ fun HomeScreen(
                     Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Share", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                }
+            }
+        }
+    }
+
+    if (showProfileSheet) {
+        val totalDocuments = documents.size
+        val totalPages = documents.sumOf { it.document.pageCount }
+        val totalSize = documents.sumOf { it.document.pdfSize }
+
+        ModalBottomSheet(
+            onDismissRequest = { showProfileSheet = false },
+            containerColor = Color(0xFFF8F9FA)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+                    .padding(bottom = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Avatar
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape)
+                        .padding(4.dp)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.AccountCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text("SmartScan Pro", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                Text("Offline User", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // Stats Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Docs Stat
+                    Card(
+                        modifier = Modifier.weight(1f).height(100.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(20.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize().padding(16.dp),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(totalDocuments.toString(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                            Text("Documents", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        }
+                    }
+
+                    // Pages Stat
+                    Card(
+                        modifier = Modifier.weight(1f).height(100.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(20.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize().padding(16.dp),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(totalPages.toString(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = Color(0xFFE65100))
+                            Text("Total Pages", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Storage Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Storage, contentDescription = null, tint = Color(0xFF43A047), modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text("Local Storage Used", fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                            Spacer(modifier = Modifier.weight(1f))
+                            Text(formatSize(totalSize), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // Fake progress bar representing storage used relative to a 1GB limit threshold
+                        val maxStorage = 1024L * 1024L * 1024L // 1 GB
+                        val progress = (totalSize.toFloat() / maxStorage.toFloat()).coerceIn(0.01f, 1f)
+                        
+                        LinearProgressIndicator(
+                            progress = { progress },
+                            modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = Color(0xFFE0E0E0),
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "App runs completely offline. Files are stored securely on your device.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                Button(
+                    onClick = { showProfileSheet = false },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("Close", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
