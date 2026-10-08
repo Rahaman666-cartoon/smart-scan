@@ -223,63 +223,46 @@ fun HomeScreen(
                         }
                     }
 
-                    // Secondary Tools Stack
-                    Column(
-                        modifier = Modifier.weight(1f).height(160.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    // Import Image Card
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(160.dp)
+                            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha=0.05f))
+                            .clip(RoundedCornerShape(24.dp))
+                            .clickable { galleryLauncher.launch("image/*") },
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                     ) {
-                        // Import Image
-                        Card(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                                .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha=0.05f))
-                                .clip(RoundedCornerShape(20.dp))
-                                .clickable { galleryLauncher.launch("image/*") },
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Box(
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .background(Color(0xFFE8F5E9), CircleShape),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .background(Color(0xFFE8F5E9), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(Icons.Default.Image, contentDescription = null, tint = Color(0xFF43A047))
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text("Import Image", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                Icon(
+                                    Icons.Default.Image,
+                                    contentDescription = "Import Image",
+                                    tint = Color(0xFF43A047),
+                                    modifier = Modifier.size(32.dp)
+                                )
                             }
-                        }
-
-                        // Merge PDF
-                        Card(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                                .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha=0.05f))
-                                .clip(RoundedCornerShape(20.dp))
-                                .clickable { onNavigateToMerge() },
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .background(Color(0xFFFFF3E0), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = Color(0xFFF57C00))
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text("Merge PDFs", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                "Import Image",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                "From gallery",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
                         }
                     }
                 }
