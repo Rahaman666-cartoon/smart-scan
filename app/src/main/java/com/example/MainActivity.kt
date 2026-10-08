@@ -242,7 +242,6 @@ class MainActivity : ComponentActivity() {
                                             viewModel.loadExistingDocumentForPreview(doc)
                                             navController.navigate("document_preview")
                                         },
-                                        onNavigateToMerge = { navController.navigate("pdf_merge") },
                                         onNavigateToCrop = { bitmap -> 
                                             kotlin.concurrent.thread {
                                                 try {
@@ -318,15 +317,10 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
-
-                    composable("pdf_merge") {
-                        PdfMergeScreen(
-                            viewModel = viewModel,
-                            onClose = { navController.popBackStack() }
-                        )
-                    }
                 }
             }
         }
     }
+    }
 }
+

@@ -515,20 +515,20 @@ fun HomeScreen(
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Surface(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                    color = Color(0xFFF8F9FA),
+                    color = MaterialTheme.colorScheme.surface,
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Text(
                         text = result.displayValue.takeIf { it.isNotBlank() } ?: result.rawValue,
                         modifier = Modifier.padding(16.dp),
                         textAlign = TextAlign.Center,
-                        color = Color(0xFF1E1E1E),
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 16.sp
                     )
                 }
@@ -582,7 +582,7 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE0E0E0)),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF1E1E1E))
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
                 ) {
                     Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(8.dp))
@@ -615,7 +615,7 @@ fun HomeScreen(
 
         ModalBottomSheet(
             onDismissRequest = { showProfileSheet = false },
-            containerColor = Color(0xFFF8F9FA)
+            containerColor = MaterialTheme.colorScheme.surface
         ) {
             Column(
                 modifier = Modifier
@@ -658,7 +658,7 @@ fun HomeScreen(
                     )
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { isEditingName = true }) {
-                        Text(userName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                        Text(userName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(modifier = Modifier.width(8.dp))
                         Icon(Icons.Default.Edit, contentDescription = "Edit Name", modifier = Modifier.size(16.dp), tint = Color.Gray)
                     }
@@ -738,7 +738,7 @@ fun HomeScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Storage, contentDescription = null, tint = Color(0xFF43A047), modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(12.dp))
-                            Text("Local Storage Used", fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                            Text("Local Storage Used", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             Spacer(modifier = Modifier.weight(1f))
                             Text(formatSize(totalSize), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         }
@@ -794,3 +794,4 @@ fun HomeScreen(
         }
     }
 }
+

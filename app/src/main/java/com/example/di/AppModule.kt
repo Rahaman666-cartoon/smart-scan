@@ -46,3 +46,4 @@ object AppModule {
         return SettingsManager(context)
     }
 }
+

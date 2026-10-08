@@ -53,3 +53,4 @@ val TextPrimaryLight = Color(0xFF1A1C1E)
 val SoftBgDark = Color(0xFF111318)
 val CardBgDark = Color(0xFF1A1C22)
 val TextPrimaryDark = Color(0xFFE2E2E6)
+

@@ -36,3 +36,4 @@ interface DocumentDao {
     @Query("DELETE FROM document_pages WHERE documentId = :documentId")
     suspend fun deletePagesForDocument(documentId: Long)
 }
+

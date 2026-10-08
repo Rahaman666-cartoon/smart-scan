@@ -421,3 +421,4 @@ object ImageUtils {
         return detectDocumentCornersWithConfidence(bitmap).points
     }
 }
+

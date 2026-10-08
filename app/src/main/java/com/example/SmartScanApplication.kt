@@ -11,3 +11,4 @@ class SmartScanApplication : Application() {
         PDFBoxResourceLoader.init(applicationContext)
     }
 }
+

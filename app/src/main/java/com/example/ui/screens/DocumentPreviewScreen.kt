@@ -494,7 +494,7 @@ fun DocumentPreviewScreen(
     }
 
     Scaffold(
-        containerColor = Color(0xFF121212),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { 
@@ -528,28 +528,28 @@ fun DocumentPreviewScreen(
                         Icon(
                             if (isTextMode) Icons.Default.Image else Icons.Default.TextFields,
                             contentDescription = "Toggle Text/Image View",
-                            tint = if (isTextMode) MaterialTheme.colorScheme.primary else Color(0xFF1E1E1E)
+                            tint = if (isTextMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
                     }
                     Text(
                         text = "${if (scannedPages.isEmpty()) 0 else pagerState.currentPage + 1}/${scannedPages.size}",
                         modifier = Modifier.padding(horizontal = 16.dp),
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E1E1E)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.White,
-                    titleContentColor = Color(0xFF1E1E1E),
-                    navigationIconContentColor = Color(0xFF1E1E1E),
-                    actionIconContentColor = Color(0xFF1E1E1E)
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
         },
         bottomBar = {
             BottomAppBar(
                 containerColor = Color.White,
-                contentColor = Color(0xFF1E1E1E),
+                contentColor = MaterialTheme.colorScheme.onSurface,
                 tonalElevation = 0.dp
             ) {
                 Row(
@@ -624,7 +624,7 @@ fun DocumentPreviewScreen(
         Box(modifier = Modifier
             .fillMaxSize()
             .padding(padding)
-            .background(Color(0xFF121212))) { 
+            .background(MaterialTheme.colorScheme.background)) { 
             
             if (scannedPages.isEmpty()) {
                 Text("No pages scanned", color = Color.White, modifier = Modifier.align(Alignment.Center))
@@ -733,12 +733,12 @@ fun DocumentPreviewScreen(
                                 .padding(16.dp)
                         ) {
                             if (isRunningOcr && !ocrTextMap.containsKey(page)) {
-                                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = Color(0xFF1E1E1E))
+                                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = MaterialTheme.colorScheme.onSurface)
                             } else {
                                 val scrollState = rememberScrollState()
                                 Text(
                                     text = ocrTextMap[page] ?: "No text found.",
-                                    color = Color(0xFF1E1E1E),
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .verticalScroll(scrollState)
@@ -828,7 +828,7 @@ fun BottomBarButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     onClick: () -> Unit,
-    tint: Color = Color(0xFF1E1E1E)
+    tint: Color = MaterialTheme.colorScheme.onSurface
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -841,3 +841,4 @@ fun BottomBarButton(
         Text(label, color = tint, fontSize = 10.sp, fontWeight = FontWeight.Medium)
     }
 }
+

@@ -14,3 +14,4 @@ data class DocumentEntity(
     val ocrText: String = "",
     val pdfSize: Long = 0
 )
+

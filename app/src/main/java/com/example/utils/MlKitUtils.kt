@@ -77,3 +77,4 @@ object MlKitUtils {
         val url: String? = null
     )
 }
+

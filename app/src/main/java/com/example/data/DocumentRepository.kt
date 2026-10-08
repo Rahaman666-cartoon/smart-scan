@@ -34,3 +34,4 @@ class DocumentRepository(private val documentDao: DocumentDao) {
         documentDao.insertPages(pages)
     }
 }
+

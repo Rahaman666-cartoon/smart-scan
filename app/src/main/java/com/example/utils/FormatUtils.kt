@@ -27,3 +27,4 @@ fun getBarcodeFormatName(format: Int): String {
         else -> "BARCODE / QR CODE"
     }
 }
+

@@ -21,3 +21,4 @@ data class DocumentPageEntity(
     val pageIndex: Int,
     val canonicalFilePath: String
 )
+

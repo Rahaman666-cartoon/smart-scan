@@ -449,3 +449,4 @@ object OpenCvImageProcessor {
         return 128.0
     }
 }
+

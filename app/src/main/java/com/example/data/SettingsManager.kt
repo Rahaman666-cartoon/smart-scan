@@ -101,3 +101,4 @@ class SettingsManager(context: Context) {
         _qrCodesRead.value = newCount
     }
 }
+
