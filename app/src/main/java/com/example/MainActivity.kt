@@ -243,7 +243,22 @@ class MainActivity : ComponentActivity() {
                                             navController.navigate("document_preview")
                                         },
                                         onNavigateToMerge = { navController.navigate("pdf_merge") },
-                                        onNavigateToCrop = { /* Not used from Home */ }
+                                        onNavigateToCrop = { bitmap -> 
+                                            kotlin.concurrent.thread {
+                                                try {
+                                                    val tempFile = java.io.File(cacheDir, "imported_${System.currentTimeMillis()}.jpg")
+                                                    java.io.FileOutputStream(tempFile).use { out ->
+                                                        bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
+                                                    }
+                                                    runOnUiThread {
+                                                        viewModel.addScannedPage(android.net.Uri.fromFile(tempFile))
+                                                        navController.navigate("document_preview")
+                                                    }
+                                                } catch (e: Exception) {
+                                                    e.printStackTrace()
+                                                }
+                                            }
+                                        }
                                     )
                                     1 -> DocumentListScreen(
                                         viewModel = viewModel,
