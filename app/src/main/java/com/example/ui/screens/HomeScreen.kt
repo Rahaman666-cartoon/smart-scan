@@ -83,31 +83,7 @@ fun HomeScreen(
         }
     }
 
-    val barcodeGalleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            scope.launch {
-                try {
-                    val bitmap = withContext(Dispatchers.IO) {
-                        context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                            android.graphics.BitmapFactory.decodeStream(inputStream)
-                        }
-                    }
-                    if (bitmap != null) {
-                        val barcodes = com.example.utils.MlKitHelper.scanBarcodes(bitmap)
-                        withContext(Dispatchers.Main) {
-                            if (barcodes.isNotEmpty()) {
-                                Toast.makeText(context, "Barcode: ${barcodes.first().displayValue}", Toast.LENGTH_LONG).show()
-                            } else {
-                                Toast.makeText(context, "No barcode found in image", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    }
-                } catch (e: Exception) {}
-            }
-        }
-    }
+
 
     // A beautiful gradient brush for the header
     val headerGradient = Brush.verticalGradient(
@@ -259,7 +235,7 @@ fun HomeScreen(
                                 .fillMaxWidth()
                                 .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha=0.05f))
                                 .clip(RoundedCornerShape(20.dp))
-                                .clickable { onNavigateToCamera() },
+                                .clickable { galleryLauncher.launch("image/*") },
                             colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
                             Row(
@@ -317,7 +293,7 @@ fun HomeScreen(
                         .height(72.dp)
                         .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha=0.05f))
                         .clip(RoundedCornerShape(20.dp))
-                        .clickable { barcodeGalleryLauncher.launch("image/*") },
+                        .clickable { onNavigateToBarcode() },
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Row(
