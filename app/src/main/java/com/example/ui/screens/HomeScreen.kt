@@ -49,7 +49,6 @@ fun HomeScreen(
     onNavigateToCamera: () -> Unit,
     onNavigateToBarcode: () -> Unit,
     onNavigateToDocument: (com.example.data.DocumentWithPages) -> Unit,
-    onNavigateToMerge: () -> Unit,
     onNavigateToCrop: (Bitmap) -> Unit
 ) {
     val context = LocalContext.current
@@ -351,40 +350,6 @@ fun HomeScreen(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-
-                // Merge PDFs Standalone
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(72.dp)
-                        .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha=0.05f))
-                        .clip(RoundedCornerShape(20.dp))
-                        .clickable { onNavigateToMerge() },
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .background(Color(0xFFE3F2FD), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.LibraryBooks, contentDescription = null, tint = Color(0xFF1565C0))
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column {
-                                Text("Merge PDFs", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
-                                Text("Combine multiple documents", fontSize = 12.sp, color = Color.Gray)
-                            }
-                        }
-                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
-                    }
-                }
             }
         }
 
@@ -853,4 +818,6 @@ fun HomeScreen(
         }
     }
 }
+
+
 
