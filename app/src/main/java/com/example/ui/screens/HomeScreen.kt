@@ -248,7 +248,7 @@ fun HomeScreen(
                             .height(160.dp)
                             .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha=0.05f))
                             .clip(RoundedCornerShape(24.dp))
-                            .clickable { galleryLauncher.launch("image/*") },
+                            .clickable { onNavigateToCamera() },
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                     ) {
                         Column(
