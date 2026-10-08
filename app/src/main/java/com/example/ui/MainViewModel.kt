@@ -26,6 +26,9 @@ class MainViewModel @Inject constructor(
     val settingsManager: SettingsManager
 ) : ViewModel() {
 
+    var cropBitmap: android.graphics.Bitmap? = null
+    var cropPoints: List<android.graphics.PointF>? = null
+
     // Document listing, filtration and sorting
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
