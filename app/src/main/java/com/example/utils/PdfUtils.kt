@@ -28,13 +28,24 @@ object PdfUtils {
                     decoder.isMutableRequired = true
                 }
                 
-                val page = PDPage(PDRectangle(bitmap.width.toFloat(), bitmap.height.toFloat()))
+                val a4Width = PDRectangle.A4.width
+                val a4Height = PDRectangle.A4.height
+                val page = PDPage(PDRectangle.A4)
                 document.addPage(page)
 
                 val pdImage = JPEGFactory.createFromImage(document, bitmap, quality / 100f, 72)
                 val contentStream = PDPageContentStream(document, page)
                 
-                contentStream.drawImage(pdImage, 0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
+                // Scale proportionally to fit A4
+                val scale = minOf(a4Width / bitmap.width.toFloat(), a4Height / bitmap.height.toFloat())
+                val drawWidth = bitmap.width * scale
+                val drawHeight = bitmap.height * scale
+                
+                // Center the image
+                val startX = (a4Width - drawWidth) / 2f
+                val startY = (a4Height - drawHeight) / 2f
+                
+                contentStream.drawImage(pdImage, startX, startY, drawWidth, drawHeight)
                 contentStream.close()
                 bitmap.recycle() // Release memory for this page
             }
@@ -51,14 +62,24 @@ object PdfUtils {
         val document = PDDocument()
         try {
             for (bitmap in bitmaps) {
-                // Ensure correct aspect ratio / dimensions
-                val page = PDPage(PDRectangle(bitmap.width.toFloat(), bitmap.height.toFloat()))
+                val a4Width = PDRectangle.A4.width
+                val a4Height = PDRectangle.A4.height
+                val page = PDPage(PDRectangle.A4)
                 document.addPage(page)
 
                 val pdImage = JPEGFactory.createFromImage(document, bitmap, 0.75f, 72)
                 val contentStream = PDPageContentStream(document, page)
                 
-                contentStream.drawImage(pdImage, 0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
+                // Scale proportionally to fit A4
+                val scale = minOf(a4Width / bitmap.width.toFloat(), a4Height / bitmap.height.toFloat())
+                val drawWidth = bitmap.width * scale
+                val drawHeight = bitmap.height * scale
+                
+                // Center the image
+                val startX = (a4Width - drawWidth) / 2f
+                val startY = (a4Height - drawHeight) / 2f
+                
+                contentStream.drawImage(pdImage, startX, startY, drawWidth, drawHeight)
                 contentStream.close()
             }
             document.save(outputFile)
