@@ -242,12 +242,21 @@ class MainActivity : ComponentActivity() {
                                             viewModel.loadExistingDocumentForPreview(doc)
                                             navController.navigate("document_preview")
                                         },
+                                        onNavigateToMerge = { navController.navigate("pdf_merge") },
                                         onNavigateToCrop = { bitmap -> 
                                             kotlin.concurrent.thread {
                                                 try {
+                                                    // Auto-crop imported image using OpenCV
+                                                    val points = com.example.utils.ImageUtils.detectDocumentCorners(bitmap)
+                                                    val finalBitmap = if (points.size == 4) {
+                                                        com.example.utils.ImageUtils.cropAndWarpPerspective(bitmap, points)
+                                                    } else {
+                                                        bitmap
+                                                    }
+                                                    
                                                     val tempFile = java.io.File(cacheDir, "imported_${System.currentTimeMillis()}.jpg")
                                                     java.io.FileOutputStream(tempFile).use { out ->
-                                                        bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
+                                                        finalBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, out)
                                                     }
                                                     runOnUiThread {
                                                         viewModel.addScannedPage(android.net.Uri.fromFile(tempFile))
@@ -316,6 +325,13 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
+                    }
+
+                    composable("pdf_merge") {
+                        com.example.ui.screens.PdfMergeScreen(
+                            viewModel = viewModel,
+                            onClose = { navController.popBackStack() }
+                        )
                     }
                 }
             }

@@ -49,6 +49,7 @@ fun HomeScreen(
     onNavigateToCamera: () -> Unit,
     onNavigateToBarcode: () -> Unit,
     onNavigateToDocument: (com.example.data.DocumentWithPages) -> Unit,
+    onNavigateToMerge: () -> Unit,
     onNavigateToCrop: (Bitmap) -> Unit
 ) {
     val context = LocalContext.current
@@ -287,14 +288,78 @@ fun HomeScreen(
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // QR Code Standalone
+                // QR Code Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Scan QR
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(120.dp)
+                            .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha=0.05f))
+                            .clip(RoundedCornerShape(20.dp))
+                            .clickable { onNavigateToBarcode() },
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(Color(0xFFF3E5F5), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = Color(0xFF8E24AA))
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Scan QR", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
+
+                    // Import QR
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(120.dp)
+                            .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha=0.05f))
+                            .clip(RoundedCornerShape(20.dp))
+                            .clickable { qrGalleryLauncher.launch("image/*") },
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(Color(0xFFFFF3E0), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Image, contentDescription = null, tint = Color(0xFFE65100))
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Import QR", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Merge PDFs Standalone
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(72.dp)
                         .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha=0.05f))
                         .clip(RoundedCornerShape(20.dp))
-                        .clickable { onNavigateToBarcode() },
+                        .clickable { onNavigateToMerge() },
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
                     Row(
@@ -306,23 +371,18 @@ fun HomeScreen(
                             Box(
                                 modifier = Modifier
                                     .size(48.dp)
-                                    .background(Color(0xFFF3E5F5), CircleShape),
+                                    .background(Color(0xFFE3F2FD), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = Color(0xFF8E24AA))
+                                Icon(Icons.Default.LibraryBooks, contentDescription = null, tint = Color(0xFF1565C0))
                             }
                             Spacer(modifier = Modifier.width(16.dp))
                             Column {
-                                Text("QR / Barcode", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
-                                Text("Scan any code instantly", fontSize = 12.sp, color = Color.Gray)
+                                Text("Merge PDFs", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                                Text("Combine multiple documents", fontSize = 12.sp, color = Color.Gray)
                             }
                         }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = { qrGalleryLauncher.launch("image/*") }) {
-                                Icon(Icons.Default.Image, contentDescription = "Import QR from gallery", tint = MaterialTheme.colorScheme.primary)
-                            }
-                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
-                        }
+                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
                     }
                 }
             }

@@ -1,7 +1,7 @@
 package com.example.utils
 
 import android.graphics.Bitmap
-
+import com.tom_roush.pdfbox.multipdf.PDFMergerUtility
 import com.tom_roush.pdfbox.multipdf.Splitter
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.PDPage
@@ -88,8 +88,27 @@ object PdfUtils {
         }
     }
 
-
+    /**
+     * Merges multiple PDF files on disk into one consolidated PDF file without rasterizing
+     */
+    fun mergePdfFiles(pdfFiles: List<File>, outputFile: File): Boolean {
+        if (pdfFiles.isEmpty()) return false
+        try {
+            val merger = PDFMergerUtility()
+            merger.destinationFileName = outputFile.absolutePath
+            for (file in pdfFiles) {
+                if (file.exists()) {
+                    merger.addSource(file)
+                }
+            }
+            // Use null for MemoryUsageSetting to use main memory (default)
+            merger.mergeDocuments(null)
+            return true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        }
+    }
 
 
 }
-

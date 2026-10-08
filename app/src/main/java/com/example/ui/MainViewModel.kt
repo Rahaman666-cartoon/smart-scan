@@ -315,7 +315,41 @@ class MainViewModel @Inject constructor(
         )
     }
 
+    fun mergePdfs(context: Context, docList: List<DocumentEntity>, mergedName: String) {
+        if (docList.size < 2) {
+            _fileOperationMessage.value = "Select 2 or more files to merge"
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val outputDir = context.getExternalFilesDir("ScannedDocuments") ?: context.filesDir
+                val file = File(outputDir, "${mergedName.trim().ifEmpty { "Merged_${System.currentTimeMillis()}" }}.pdf")
 
+                val filesToMerge = docList.map { File(it.filePath) }
+                val success = PdfUtils.mergePdfFiles(filesToMerge, file)
+
+                if (success) {
+                    val combinedOcr = docList.joinToString("\n\n") { "--- ${it.name} ---\n${it.ocrText}" }
+                    val totalPages = docList.sumOf { it.pageCount }
+
+                    repository.insert(
+                        DocumentEntity(
+                            name = file.nameWithoutExtension,
+                            filePath = file.absolutePath,
+                            pageCount = totalPages,
+                            ocrText = combinedOcr,
+                            pdfSize = file.length()
+                        )
+                    )
+                    _fileOperationMessage.value = "PDFs merged successfully"
+                } else {
+                    _fileOperationMessage.value = "Error merging PDFs"
+                }
+            } catch (e: Exception) {
+                _fileOperationMessage.value = "Merge failure: ${e.message}"
+            }
+        }
+    }
 
 
     fun importGalleryImage(context: Context, uri: Uri) {
@@ -341,4 +375,3 @@ class MainViewModel @Inject constructor(
         }
     }
 }
-
