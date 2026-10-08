@@ -248,7 +248,7 @@ class MainActivity : ComponentActivity() {
                                                     // Auto-crop imported image using OpenCV
                                                     val points = com.example.utils.ImageUtils.detectDocumentCorners(bitmap)
                                                     val finalBitmap = if (points.size == 4) {
-                                                        com.example.utils.ImageUtils.cropAndWarpPerspective(bitmap, points)
+                                                        com.example.utils.ImageUtils.cropAndWarpPerspective(bitmap, points[0], points[1], points[2], points[3])
                                                     } else {
                                                         bitmap
                                                     }
