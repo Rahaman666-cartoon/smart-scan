@@ -258,7 +258,7 @@ fun HomeScreen(
                                 .fillMaxWidth()
                                 .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha=0.05f))
                                 .clip(RoundedCornerShape(20.dp))
-                                .clickable { galleryLauncher.launch("image/*") },
+                                .clickable { onNavigateToCamera() },
                             colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
                             Row(
