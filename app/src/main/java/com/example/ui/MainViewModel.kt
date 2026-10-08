@@ -351,34 +351,6 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun splitPdf(context: Context, doc: DocumentEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val file = File(doc.filePath)
-                val outputDir = context.getExternalFilesDir("ScannedDocuments") ?: context.filesDir
-                val results = PdfUtils.splitPdfFile(file, outputDir, doc.name + "_split")
-
-                if (results.isNotEmpty()) {
-                    results.forEach { singlePageFile ->
-                        repository.insert(
-                            DocumentEntity(
-                                name = singlePageFile.nameWithoutExtension,
-                                filePath = singlePageFile.absolutePath,
-                                pageCount = 1,
-                                ocrText = "Split from ${doc.name}\n${doc.ocrText}",
-                                pdfSize = singlePageFile.length()
-                            )
-                        )
-                    }
-                    _fileOperationMessage.value = "Split PDF into ${results.size} files"
-                } else {
-                    _fileOperationMessage.value = "Failed to split PDF"
-                }
-            } catch (e: Exception) {
-                _fileOperationMessage.value = "Split failed: ${e.message}"
-            }
-        }
-    }
 
     fun importGalleryImage(context: Context, uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {

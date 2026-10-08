@@ -230,8 +230,7 @@ fun DocumentListScreen(
                                 docToRename = doc.document
                                 renameInput = doc.document.name
                             },
-                            onDelete = { docToDelete = doc.document },
-                            onSplit = { viewModel.splitPdf(context, doc.document) }
+                            onDelete = { docToDelete = doc.document }
                         )
                     }
                 }
@@ -294,8 +293,7 @@ fun DocumentListCard(
     onClicked: () -> Unit,
     onToggleFavorite: () -> Unit,
     onRename: () -> Unit,
-    onDelete: () -> Unit,
-    onSplit: () -> Unit
+    onDelete: () -> Unit
 ) {
     var showMoreDropdown by remember { mutableStateOf(false) }
 
@@ -380,10 +378,7 @@ fun DocumentListCard(
                         text = { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.Edit, null); Spacer(Modifier.width(8.dp)); Text("Rename") } },
                         onClick = { onRename(); showMoreDropdown = false }
                     )
-                    DropdownMenuItem(
-                        text = { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.CallSplit, null); Spacer(Modifier.width(8.dp)); Text("Split Pages") } },
-                        onClick = { onSplit(); showMoreDropdown = false }
-                    )
+
                     DropdownMenuItem(
                         text = { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error); Spacer(Modifier.width(8.dp)); Text("Delete", color = MaterialTheme.colorScheme.error) } },
                         onClick = { onDelete(); showMoreDropdown = false }

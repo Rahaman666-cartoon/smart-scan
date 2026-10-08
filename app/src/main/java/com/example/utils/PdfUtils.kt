@@ -89,33 +89,5 @@ object PdfUtils {
         }
     }
 
-    /**
-     * Splits a multi-page PDF file into standard separate pages without rasterizing
-     */
-    fun splitPdfFile(inputFile: File, outputDirectory: File, baseName: String): List<File> {
-        val resultFiles = mutableListOf<File>()
-        if (!inputFile.exists()) return resultFiles
-        
-        var document: PDDocument? = null
-        try {
-            document = PDDocument.load(inputFile)
-            val splitter = Splitter()
-            @Suppress("UNCHECKED_CAST")
-            val splitDocuments = splitter.split(document) as List<PDDocument>
-            
-            var index = 0
-            for (splitDoc in splitDocuments) {
-                val outputFile = File(outputDirectory, "${baseName}_page_${index + 1}.pdf")
-                splitDoc.save(outputFile)
-                splitDoc.close()
-                resultFiles.add(outputFile)
-                index++
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        } finally {
-            document?.close()
-        }
-        return resultFiles
-    }
+
 }
