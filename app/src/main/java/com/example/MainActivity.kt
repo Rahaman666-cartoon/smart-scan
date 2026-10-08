@@ -201,11 +201,11 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
                             bottomBar = {
                                 Column {
-                                    HorizontalDivider(color = Color(0xFFE1E2EC), thickness = 1.dp)
+                                    HorizontalDivider(color = androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
                                     NavigationBar(
                                         modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
-                                        containerColor = Color(0xFFF0F4F9),
-                                        tonalElevation = 0.dp
+                                        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
+                                        tonalElevation = 3.dp
                                     ) {
                                         NavigationBarItem(
                                             selected = currentDashboardTab == 0,

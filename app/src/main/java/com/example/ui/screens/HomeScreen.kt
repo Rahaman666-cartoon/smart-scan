@@ -83,6 +83,25 @@ fun HomeScreen(
         }
     }
 
+    val qrGalleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            scope.launch {
+                try {
+                    val bitmap = withContext(Dispatchers.IO) {
+                        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                            android.graphics.BitmapFactory.decodeStream(inputStream)
+                        }
+                    }
+                    if (bitmap != null) {
+                        viewModel.scanQrOrBarcode(bitmap)
+                    }
+                } catch (e: Exception) {}
+            }
+        }
+    }
+
 
 
     // A beautiful gradient brush for the header
@@ -299,7 +318,12 @@ fun HomeScreen(
                                 Text("Scan any code instantly", fontSize = 12.sp, color = Color.Gray)
                             }
                         }
-                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { qrGalleryLauncher.launch("image/*") }) {
+                                Icon(Icons.Default.Image, contentDescription = "Import QR from gallery", tint = MaterialTheme.colorScheme.primary)
+                            }
+                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
+                        }
                     }
                 }
             }
