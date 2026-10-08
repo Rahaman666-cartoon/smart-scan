@@ -67,7 +67,7 @@ fun DocumentListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Library", fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E)) },
+                title = { Text("My Library", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
                 actions = {
                     IconButton(onClick = { viewModel.setOnlyFavorites(!onlyFavorites) }) {
                         Icon(
@@ -78,7 +78,7 @@ fun DocumentListScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFF8F9FA)
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         }
@@ -87,7 +87,7 @@ fun DocumentListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color(0xFFF8F9FA))
+                .background(MaterialTheme.colorScheme.background)
         ) {
             // Modern Search Bar
             OutlinedTextField(
@@ -104,13 +104,13 @@ fun DocumentListScreen(
                 },
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = Color.Transparent,
                     cursorColor = MaterialTheme.colorScheme.primary,
-                    focusedTextColor = Color(0xFF1E1E1E),
-                    unfocusedTextColor = Color(0xFF1E1E1E)
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                 ),
                 shape = RoundedCornerShape(24.dp),
                 modifier = Modifier
@@ -164,7 +164,7 @@ fun DocumentListScreen(
                     DropdownMenu(
                         expanded = expandedSortMenu,
                         onDismissRequest = { expandedSortMenu = false },
-                        modifier = Modifier.background(Color.White)
+                        modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                     ) {
                         DropdownMenuItem(
                             text = { Text("Date (Newest first)") },
@@ -203,7 +203,7 @@ fun DocumentListScreen(
                             if (searchQuery.isNotEmpty()) "No matches found" else "Your library is empty",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFF1E1E1E)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
@@ -306,7 +306,7 @@ fun DocumentListCard(
             .shadow(4.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha = 0.05f))
             .clip(RoundedCornerShape(20.dp))
             .clickable { onClicked() },
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
@@ -318,7 +318,7 @@ fun DocumentListCard(
             Box(
                 modifier = Modifier
                     .size(56.dp)
-                    .background(Color(0xFFF5F5F5), RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp))
                     .clip(RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
             ) {
@@ -346,7 +346,7 @@ fun DocumentListCard(
                     text = doc.document.name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1E1E1E),
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -374,7 +374,7 @@ fun DocumentListCard(
                 DropdownMenu(
                     expanded = showMoreDropdown,
                     onDismissRequest = { showMoreDropdown = false },
-                    modifier = Modifier.background(Color.White)
+                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                 ) {
                     DropdownMenuItem(
                         text = { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.Edit, null); Spacer(Modifier.width(8.dp)); Text("Rename") } },
@@ -437,9 +437,9 @@ fun DocumentDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(doc.document.name, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E)) },
+                title = { Text(doc.document.name, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
                 navigationIcon = {
-                    IconButton(onClick = onClose) { Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color(0xFF1E1E1E)) }
+                    IconButton(onClick = onClose) { Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface) }
                 },
                 actions = {
                     IconButton(
@@ -460,10 +460,10 @@ fun DocumentDetailScreen(
                             }
                         }
                     ) {
-                        Icon(Icons.Default.Share, contentDescription = "Share", tint = Color(0xFF1E1E1E))
+                        Icon(Icons.Default.Share, contentDescription = "Share", tint = MaterialTheme.colorScheme.onSurface)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         }
     ) { paddingValues ->
@@ -471,9 +471,9 @@ fun DocumentDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color(0xFFF8F9FA))
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            TabRow(selectedTabIndex = activeTab, containerColor = Color.White, contentColor = MaterialTheme.colorScheme.primary) {
+            TabRow(selectedTabIndex = activeTab, containerColor = MaterialTheme.colorScheme.surface, contentColor = MaterialTheme.colorScheme.primary) {
                 Tab(selected = activeTab == 0, onClick = { activeTab = 0 }, text = { Text("PDF View", fontWeight = FontWeight.Bold) })
                 Tab(selected = activeTab == 1, onClick = { activeTab = 1 }, text = { Text("OCR Reader", fontWeight = FontWeight.Bold) })
             }
@@ -496,7 +496,7 @@ fun DocumentDetailScreen(
                         items(pdfBitmaps) { bitmap ->
                             Card(
                                 modifier = Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(12.dp)),
-                                colors = CardDefaults.cardColors(containerColor = Color.White)
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                             ) {
                                 ZoomableImage(bitmap)
                             }
@@ -547,7 +547,7 @@ fun DocumentDetailScreen(
                     Surface(
                         modifier = Modifier.weight(1f).fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.surface,
                         shadowElevation = 4.dp
                     ) {
                         LazyColumn(modifier = Modifier.padding(16.dp)) {
@@ -555,7 +555,7 @@ fun DocumentDetailScreen(
                                 if (doc.document.ocrText.isBlank()) {
                                     Text("No text detected.", color = Color.Gray)
                                 } else {
-                                    Text(doc.document.ocrText, style = MaterialTheme.typography.bodyLarge, color = Color(0xFF1E1E1E), lineHeight = androidx.compose.ui.unit.TextUnit(24f, androidx.compose.ui.unit.TextUnitType.Sp))
+                                    Text(doc.document.ocrText, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, lineHeight = androidx.compose.ui.unit.TextUnit(24f, androidx.compose.ui.unit.TextUnitType.Sp))
                                 }
                             }
                         }
@@ -575,7 +575,7 @@ fun ZoomableImage(bitmap: Bitmap) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoom, _ ->
                     scale = (scale * zoom).coerceIn(1f, 5f)
@@ -602,3 +602,4 @@ fun ZoomableImage(bitmap: Bitmap) {
         )
     }
 }
+

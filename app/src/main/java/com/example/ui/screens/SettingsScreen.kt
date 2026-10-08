@@ -34,9 +34,9 @@ fun SettingsScreen(viewModel: MainViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings", fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E)) },
+                title = { Text("Settings", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFF8F9FA)
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         }
@@ -45,7 +45,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color(0xFFF8F9FA)),
+                .background(MaterialTheme.colorScheme.background),
             contentPadding = PaddingValues(bottom = 120.dp, top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
@@ -57,7 +57,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
                         .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha=0.05f)),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     shape = RoundedCornerShape(24.dp)
                 ) {
                     Column(modifier = Modifier.padding(24.dp)) {
@@ -66,7 +66,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                                 Icon(Icons.Default.DarkMode, null, tint = Color(0xFF1976D2))
                             }
                             Spacer(modifier = Modifier.width(16.dp))
-                            Text("Theme Mode", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                            Text("Theme Mode", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         }
                         
                         Spacer(modifier = Modifier.height(16.dp))
@@ -97,7 +97,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                                 Icon(Icons.Default.Palette, null, tint = Color(0xFFC2185B))
                             }
                             Spacer(modifier = Modifier.width(16.dp))
-                            Text("Brand Color", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                            Text("Brand Color", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         }
                         
                         Spacer(modifier = Modifier.height(16.dp))
@@ -127,7 +127,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                                         Icon(
                                             Icons.Default.Check,
                                             contentDescription = null,
-                                            tint = Color.White,
+                                            tint = MaterialTheme.colorScheme.surface,
                                             modifier = Modifier.padding(12.dp)
                                         )
                                     }
@@ -146,7 +146,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
                         .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha=0.05f)),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     shape = RoundedCornerShape(24.dp)
                 ) {
                     Column(modifier = Modifier.padding(24.dp)) {
@@ -156,7 +156,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                             }
                             Spacer(modifier = Modifier.width(16.dp))
                             Column {
-                                Text("PDF Image Quality", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                                Text("PDF Image Quality", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                                 Text("Controls compression level", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                             }
                         }
@@ -202,12 +202,12 @@ fun SettingsScreen(viewModel: MainViewModel) {
                         Icon(
                             Icons.Default.DocumentScanner,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.surface,
                             modifier = Modifier.size(32.dp)
                         )
                     }
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("SmartScan AI", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1E1E1E))
+                    Text("SmartScan AI", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
                     Text("Version 2.0.0 (Pro)", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
@@ -234,3 +234,4 @@ private fun SettingsSectionTitle(title: String) {
             .padding(bottom = 8.dp)
     )
 }
+

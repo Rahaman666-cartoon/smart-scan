@@ -96,7 +96,7 @@ fun HomeScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8F9FA))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // --- 1. Stunning Header ---
         item {
@@ -188,7 +188,7 @@ fun HomeScreen(
                             .shadow(16.dp, RoundedCornerShape(24.dp), spotColor = MaterialTheme.colorScheme.primary)
                             .clip(RoundedCornerShape(24.dp))
                             .clickable { onNavigateToCamera() },
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                     ) {
                         Column(
                             modifier = Modifier.fillMaxSize(),
@@ -213,7 +213,7 @@ fun HomeScreen(
                                 "Smart Scan",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1E1E1E)
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 "Auto-detect edges",
@@ -236,7 +236,7 @@ fun HomeScreen(
                                 .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha=0.05f))
                                 .clip(RoundedCornerShape(20.dp))
                                 .clickable { galleryLauncher.launch("image/*") },
-                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
@@ -251,7 +251,7 @@ fun HomeScreen(
                                     Icon(Icons.Default.Image, contentDescription = null, tint = Color(0xFF43A047))
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
-                                Text("Import Image", fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                                Text("Import Image", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             }
                         }
 
@@ -263,7 +263,7 @@ fun HomeScreen(
                                 .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha=0.05f))
                                 .clip(RoundedCornerShape(20.dp))
                                 .clickable { onNavigateToMerge() },
-                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
@@ -278,7 +278,7 @@ fun HomeScreen(
                                     Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = Color(0xFFF57C00))
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
-                                Text("Merge PDFs", fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                                Text("Merge PDFs", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             }
                         }
                     }
@@ -294,7 +294,7 @@ fun HomeScreen(
                         .shadow(8.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha=0.05f))
                         .clip(RoundedCornerShape(20.dp))
                         .clickable { onNavigateToBarcode() },
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
@@ -312,7 +312,7 @@ fun HomeScreen(
                             }
                             Spacer(modifier = Modifier.width(16.dp))
                             Column {
-                                Text("QR / Barcode", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E1E1E))
+                                Text("QR / Barcode", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                                 Text("Scan any code instantly", fontSize = 12.sp, color = Color.Gray)
                             }
                         }
@@ -337,7 +337,7 @@ fun HomeScreen(
                     text = "Recent Scans",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1E1E1E)
+                    color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
                     text = "See All",
@@ -382,7 +382,7 @@ fun HomeScreen(
                         .padding(horizontal = 16.dp, vertical = 6.dp)
                         .clip(RoundedCornerShape(16.dp))
                         .clickable { onNavigateToDocument(doc) },
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Row(
@@ -423,7 +423,7 @@ fun HomeScreen(
                                 text = doc.document.name,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1E1E1E),
+                                color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
