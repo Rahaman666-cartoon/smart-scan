@@ -32,6 +32,15 @@ class SettingsManager(context: Context) {
     private val _language = MutableStateFlow(getLanguage())
     val language: StateFlow<String> = _language
 
+    private val _userName = MutableStateFlow(getUserName())
+    val userName: StateFlow<String> = _userName
+
+    private val _userAvatarIndex = MutableStateFlow(getUserAvatarIndex())
+    val userAvatarIndex: StateFlow<Int> = _userAvatarIndex
+
+    private val _qrCodesRead = MutableStateFlow(getQrCodesRead())
+    val qrCodesRead: StateFlow<Int> = _qrCodesRead
+
     fun getThemeMode(): ThemeMode {
         val name = prefs.getString("theme_mode", ThemeMode.SYSTEM.name) ?: ThemeMode.SYSTEM.name
         return try { ThemeMode.valueOf(name) } catch (e: Exception) { ThemeMode.SYSTEM }
@@ -69,5 +78,34 @@ class SettingsManager(context: Context) {
     fun setLanguage(langCode: String) {
         prefs.edit().putString("app_language", langCode).apply()
         _language.value = langCode
+    }
+
+    fun getUserName(): String {
+        return prefs.getString("user_name", "SmartScan Pro") ?: "SmartScan Pro"
+    }
+
+    fun setUserName(name: String) {
+        prefs.edit().putString("user_name", name).apply()
+        _userName.value = name
+    }
+
+    fun getUserAvatarIndex(): Int {
+        return prefs.getInt("user_avatar_index", 0)
+    }
+
+    fun setUserAvatarIndex(index: Int) {
+        prefs.edit().putInt("user_avatar_index", index).apply()
+        _userAvatarIndex.value = index
+    }
+
+    fun getQrCodesRead(): Int {
+        return prefs.getInt("qr_codes_read", 0)
+    }
+
+    fun incrementQrCodesRead() {
+        val current = getQrCodesRead()
+        val newCount = current + 1
+        prefs.edit().putInt("qr_codes_read", newCount).apply()
+        _qrCodesRead.value = newCount
     }
 }

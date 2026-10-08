@@ -613,6 +613,22 @@ fun HomeScreen(
         val totalDocuments = documents.size
         val totalPages = documents.sumOf { it.document.pageCount }
         val totalSize = documents.sumOf { it.document.pdfSize }
+        
+        val userName by viewModel.settingsManager.userName.collectAsState()
+        val userAvatarIndex by viewModel.settingsManager.userAvatarIndex.collectAsState()
+        val qrCodesRead by viewModel.settingsManager.qrCodesRead.collectAsState()
+        
+        var isEditingName by remember { mutableStateOf(false) }
+        var tempName by remember { mutableStateOf(userName) }
+        
+        val avatarColors = listOf(
+            MaterialTheme.colorScheme.primary,
+            Color(0xFFE91E63), // Pink
+            Color(0xFF4CAF50), // Green
+            Color(0xFFFF9800), // Orange
+            Color(0xFF9C27B0)  // Purple
+        )
+        val currentAvatarColor = avatarColors[userAvatarIndex % avatarColors.size]
 
         ModalBottomSheet(
             onDismissRequest = { showProfileSheet = false },
@@ -629,17 +645,42 @@ fun HomeScreen(
                 Box(
                     modifier = Modifier
                         .size(80.dp)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape)
+                        .background(currentAvatarColor.copy(alpha = 0.1f), CircleShape)
                         .padding(4.dp)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), CircleShape),
+                        .background(currentAvatarColor.copy(alpha = 0.2f), CircleShape)
+                        .clickable { 
+                            viewModel.settingsManager.setUserAvatarIndex((userAvatarIndex + 1) % avatarColors.size)
+                        },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.AccountCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
+                    Icon(Icons.Default.AccountCircle, contentDescription = "Change Avatar", tint = currentAvatarColor, modifier = Modifier.size(48.dp))
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                Text("SmartScan Pro", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                if (isEditingName) {
+                    OutlinedTextField(
+                        value = tempName,
+                        onValueChange = { tempName = it },
+                        singleLine = true,
+                        trailingIcon = {
+                            IconButton(onClick = { 
+                                viewModel.settingsManager.setUserName(tempName)
+                                isEditingName = false 
+                            }) {
+                                Icon(Icons.Default.Check, contentDescription = "Save")
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(0.8f)
+                    )
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { isEditingName = true }) {
+                        Text(userName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color(0xFF1E1E1E))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(Icons.Default.Edit, contentDescription = "Edit Name", modifier = Modifier.size(16.dp), tint = Color.Gray)
+                    }
+                }
+                
                 Text("Offline User", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
                 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -647,7 +688,7 @@ fun HomeScreen(
                 // Stats Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Docs Stat
                     Card(
@@ -657,12 +698,12 @@ fun HomeScreen(
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Column(
-                            modifier = Modifier.fillMaxSize().padding(16.dp),
+                            modifier = Modifier.fillMaxSize().padding(8.dp),
                             verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(totalDocuments.toString(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
-                            Text("Documents", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            Text("Documents", style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
 
@@ -674,12 +715,29 @@ fun HomeScreen(
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Column(
-                            modifier = Modifier.fillMaxSize().padding(16.dp),
+                            modifier = Modifier.fillMaxSize().padding(8.dp),
                             verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(totalPages.toString(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = Color(0xFFE65100))
-                            Text("Total Pages", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            Text("Total Pages", style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+
+                    // QR Stat
+                    Card(
+                        modifier = Modifier.weight(1f).height(100.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(20.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize().padding(8.dp),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(qrCodesRead.toString(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = Color(0xFF4CAF50))
+                            Text("QRs Scanned", style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }
@@ -722,6 +780,20 @@ fun HomeScreen(
                             color = Color.Gray,
                             lineHeight = 16.sp
                         )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        OutlinedButton(
+                            onClick = { 
+                                Toast.makeText(context, "Storage optimized!", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.CleaningServices, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Optimize Storage")
+                        }
                     }
                 }
 

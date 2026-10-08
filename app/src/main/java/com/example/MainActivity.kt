@@ -154,6 +154,7 @@ class MainActivity : ComponentActivity() {
                                 url = barcode.url?.url
                             )
                             viewModel.setBarcodeResult(result)
+                            viewModel.settingsManager.incrementQrCodesRead()
                         }
                         .addOnFailureListener { e ->
                             // Optional: handle failure (e.g., user cancelled)
