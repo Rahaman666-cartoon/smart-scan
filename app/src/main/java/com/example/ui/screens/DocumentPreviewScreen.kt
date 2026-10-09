@@ -528,28 +528,28 @@ fun DocumentPreviewScreen(
                         Icon(
                             if (isTextMode) Icons.Default.Image else Icons.Default.TextFields,
                             contentDescription = "Toggle Text/Image View",
-                            tint = if (isTextMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            tint = if (isTextMode) MaterialTheme.colorScheme.primary else Color.White
                         )
                     }
                     Text(
                         text = "${if (scannedPages.isEmpty()) 0 else pagerState.currentPage + 1}/${scannedPages.size}",
                         modifier = Modifier.padding(horizontal = 16.dp),
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = Color.White
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
+                    containerColor = Color.Black,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White
                 )
             )
         },
         bottomBar = {
             BottomAppBar(
-                containerColor = Color.White,
-                contentColor = MaterialTheme.colorScheme.onSurface,
+                containerColor = Color.Black,
+                contentColor = Color.White,
                 tonalElevation = 0.dp
             ) {
                 Row(
@@ -624,7 +624,7 @@ fun DocumentPreviewScreen(
         Box(modifier = Modifier
             .fillMaxSize()
             .padding(padding)
-            .background(Color(0xFF202124))) { 
+            .background(Color.Black)) { 
             
             if (scannedPages.isEmpty()) {
                 Text("No pages scanned", color = Color.White, modifier = Modifier.align(Alignment.Center))
@@ -642,7 +642,7 @@ fun DocumentPreviewScreen(
                             coil.compose.AsyncImage(
                                 model = scannedPages[page],
                                 contentDescription = "Page $page",
-                                modifier = Modifier.fillMaxSize().padding(16.dp),
+                                modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Fit
                             )
                             
@@ -828,7 +828,7 @@ fun BottomBarButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     onClick: () -> Unit,
-    tint: Color = MaterialTheme.colorScheme.onSurface
+    tint: Color = Color.White
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
