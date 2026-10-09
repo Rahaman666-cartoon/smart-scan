@@ -33,5 +33,9 @@ class DocumentRepository(private val documentDao: DocumentDao) {
     suspend fun insertPages(pages: List<DocumentPageEntity>) {
         documentDao.insertPages(pages)
     }
+
+    suspend fun deletePagesForDocument(documentId: Long) {
+        documentDao.deletePagesForDocument(documentId)
+    }
 }
 

@@ -75,7 +75,13 @@ class MainViewModel @Inject constructor(
 
     fun loadExistingDocumentForPreview(doc: com.example.data.DocumentWithPages) {
         _previewingExistingDoc.value = doc.document
-        _scannedPages.value = doc.pages.map { android.net.Uri.fromFile(java.io.File(it.canonicalFilePath)) }
+        _scannedPages.value = doc.pages.sortedBy { it.pageIndex }.map {
+            if (it.canonicalFilePath.startsWith("file://") || it.canonicalFilePath.startsWith("content://")) {
+                android.net.Uri.parse(it.canonicalFilePath)
+            } else {
+                android.net.Uri.fromFile(java.io.File(it.canonicalFilePath))
+            }
+        }
     }
 
     // Current page being edited/cropped
@@ -260,25 +266,48 @@ class MainViewModel @Inject constructor(
 
                 val finalOcrText = ocrTextBuilder.toString()
 
-                // 3. Persist to Room
-                val entity = DocumentEntity(
-                    name = sanitizedName,
-                    filePath = targetFile.absolutePath,
-                    pageCount = pages.size,
-                    ocrText = finalOcrText,
-                    pdfSize = targetFile.length()
-                )
-                val documentId = repository.insert(entity)
+                val existingDoc = _previewingExistingDoc.value
 
-                // 4. Save canonical pages
-                val pageEntities = pages.mapIndexed { index, uri ->
-                    com.example.data.DocumentPageEntity(
-                        documentId = documentId,
-                        pageIndex = index,
-                        canonicalFilePath = uri.path ?: uri.toString()
+                if (existingDoc != null) {
+                    // Update existing document
+                    val updatedEntity = existingDoc.copy(
+                        name = sanitizedName,
+                        filePath = targetFile.absolutePath,
+                        pageCount = pages.size,
+                        ocrText = finalOcrText,
+                        pdfSize = targetFile.length()
                     )
+                    repository.update(updatedEntity)
+                    repository.deletePagesForDocument(existingDoc.id)
+                    val pageEntities = pages.mapIndexed { index, uri ->
+                        com.example.data.DocumentPageEntity(
+                            documentId = existingDoc.id,
+                            pageIndex = index,
+                            canonicalFilePath = uri.path ?: uri.toString()
+                        )
+                    }
+                    repository.insertPages(pageEntities)
+                } else {
+                    // Create new document
+                    val entity = DocumentEntity(
+                        name = sanitizedName,
+                        filePath = targetFile.absolutePath,
+                        pageCount = pages.size,
+                        ocrText = finalOcrText,
+                        pdfSize = targetFile.length()
+                    )
+                    val documentId = repository.insert(entity)
+
+                    // Save canonical pages
+                    val pageEntities = pages.mapIndexed { index, uri ->
+                        com.example.data.DocumentPageEntity(
+                            documentId = documentId,
+                            pageIndex = index,
+                            canonicalFilePath = uri.path ?: uri.toString()
+                        )
+                    }
+                    repository.insertPages(pageEntities)
                 }
-                repository.insertPages(pageEntities)
 
                 withContext(Dispatchers.Main) {
                     clearActiveSession()

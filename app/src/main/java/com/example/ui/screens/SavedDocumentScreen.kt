@@ -54,17 +54,7 @@ fun SavedDocumentScreen(
                 ) {
                     if (pages.isNotEmpty()) {
                         Button(onClick = {
-                            // Load into active session
-                            viewModel.clearActiveSession()
-                            pages.sortedBy { it.pageIndex }.forEach { page ->
-                                // check if the path is an absolute path or a URI
-                                val uri = if (page.canonicalFilePath.startsWith("file://") || page.canonicalFilePath.startsWith("content://")) {
-                                    Uri.parse(page.canonicalFilePath)
-                                } else {
-                                    Uri.fromFile(File(page.canonicalFilePath))
-                                }
-                                viewModel.addScannedPage(uri)
-                            }
+                            viewModel.loadExistingDocumentForPreview(com.example.data.DocumentWithPages(document, pages))
                             onEditSession()
                         }) {
                             Text("Edit")
