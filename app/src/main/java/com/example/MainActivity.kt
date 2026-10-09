@@ -331,9 +331,7 @@ class MainActivity : ComponentActivity() {
                                 navController.navigate("dashboard") {
                                     popUpTo("dashboard") { inclusive = true }
                                 }
-                            },
-                            onAddPage = { launchScanner(true, -1) },
-                            onRetakePage = { index -> launchScanner(false, index) }
+                            }
                         )
                     }
 
