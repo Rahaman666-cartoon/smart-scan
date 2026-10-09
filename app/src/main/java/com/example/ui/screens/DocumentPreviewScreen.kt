@@ -385,7 +385,8 @@ fun DocumentPreviewScreen(
                                 try {
                                     val cachePath = File(context.cacheDir, "shared_docs")
                                     cachePath.mkdirs()
-                                    val file = File(cachePath, "${documentName.trim().ifEmpty { "shared_document" }}.pdf")
+                                    val fallbackName = if (documentName.trim().isEmpty()) "shared_document" else documentName.trim()
+                                    val file = File(cachePath, "$fallbackName.pdf")
                                     val quality = viewModel.settingsManager.pdfQuality.value.compression
                                     com.example.utils.PdfUtils.convertUrisToPdf(context, scannedPages, quality, file)
                                     val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.applicationContext.packageName}.fileprovider", file)
@@ -426,7 +427,8 @@ fun DocumentPreviewScreen(
                                 val currentUri = scannedPages[pagerState.currentPage]
                                 val cachePath = File(context.cacheDir, "images")
                                 cachePath.mkdirs()
-                                val file = File(cachePath, "${documentName.trim().ifEmpty { "shared_image" }}_page_${pagerState.currentPage + 1}.jpg")
+                                val fallbackName = if (documentName.trim().isEmpty()) "shared_image" else documentName.trim()
+                                val file = File(cachePath, "${fallbackName}_page_${pagerState.currentPage + 1}.jpg")
                                 val inputStream = context.contentResolver.openInputStream(currentUri)
                                 val fileOutputStream = FileOutputStream(file)
                                 inputStream?.copyTo(fileOutputStream)
