@@ -201,7 +201,7 @@ fun HomeScreen(
                     // Massive Scan Card
                     Card(
                         modifier = Modifier
-                            .weight(1f)
+                            .fillMaxWidth()
                             .height(160.dp)
                             .shadow(16.dp, RoundedCornerShape(24.dp), spotColor = MaterialTheme.colorScheme.primary)
                             .clip(RoundedCornerShape(24.dp))
@@ -235,49 +235,6 @@ fun HomeScreen(
                             )
                             Text(
                                 "Auto-detect edges",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray
-                            )
-                        }
-                    }
-
-                    // Import Image Card
-                    Card(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(160.dp)
-                            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha=0.05f))
-                            .clip(RoundedCornerShape(24.dp))
-                            .clickable { galleryLauncher.launch("image/*") },
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(64.dp)
-                                    .background(Color(0xFFE8F5E9), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Default.Image,
-                                    contentDescription = "Import Image",
-                                    tint = Color(0xFF43A047),
-                                    modifier = Modifier.size(32.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                "Import Image",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                "From gallery",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.Gray
                             )

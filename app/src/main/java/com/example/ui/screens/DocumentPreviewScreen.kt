@@ -624,7 +624,7 @@ fun DocumentPreviewScreen(
         Box(modifier = Modifier
             .fillMaxSize()
             .padding(padding)
-            .background(MaterialTheme.colorScheme.background)) { 
+            .background(Color(0xFF202124))) { 
             
             if (scannedPages.isEmpty()) {
                 Text("No pages scanned", color = Color.White, modifier = Modifier.align(Alignment.Center))
@@ -642,7 +642,7 @@ fun DocumentPreviewScreen(
                             coil.compose.AsyncImage(
                                 model = scannedPages[page],
                                 contentDescription = "Page $page",
-                                modifier = Modifier.fillMaxSize(),
+                                modifier = Modifier.fillMaxSize().padding(16.dp),
                                 contentScale = ContentScale.Fit
                             )
                             
