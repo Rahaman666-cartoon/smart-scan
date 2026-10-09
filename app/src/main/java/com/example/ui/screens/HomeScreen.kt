@@ -62,6 +62,7 @@ fun HomeScreen(
     var documentNameInput by remember { mutableStateOf("") }
     var searchQuery by remember { mutableStateOf("") }
     val dateFormatter = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
+    var showImportGuideDialog by remember { mutableStateOf(false) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -201,7 +202,7 @@ fun HomeScreen(
                     // Massive Scan Card
                     Card(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .weight(1f)
                             .height(160.dp)
                             .shadow(16.dp, RoundedCornerShape(24.dp), spotColor = MaterialTheme.colorScheme.primary)
                             .clip(RoundedCornerShape(24.dp))
@@ -235,6 +236,49 @@ fun HomeScreen(
                             )
                             Text(
                                 "Auto-detect edges",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+
+                    // Import Image Card
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(160.dp)
+                            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha=0.05f))
+                            .clip(RoundedCornerShape(24.dp))
+                            .clickable { showImportGuideDialog = true },
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .background(Color(0xFFE8F5E9), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.Image,
+                                    contentDescription = "Import Image",
+                                    tint = Color(0xFF43A047),
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                "Import Image",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                "From gallery",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.Gray
                             )
@@ -773,6 +817,47 @@ fun HomeScreen(
                 }
             }
         }
+    }
+
+    if (showImportGuideDialog) {
+        AlertDialog(
+            onDismissRequest = { showImportGuideDialog = false },
+            title = {
+                Text(
+                    text = "Import via Scanner",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                )
+            },
+            text = {
+                Text(
+                    text = "To import an image and use our smart auto-crop AI, tap 'Open Scanner', then tap the Gallery icon at the bottom left of the scanner screen.",
+                    fontSize = 16.sp,
+                    lineHeight = 24.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showImportGuideDialog = false
+                        onNavigateToCamera()
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("Open Scanner", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showImportGuideDialog = false }) {
+                    Text("Cancel", color = Color.Gray)
+                }
+            },
+            shape = RoundedCornerShape(20.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
