@@ -589,6 +589,9 @@ fun DocumentPreviewScreen(
                         label = "Delete", 
                         onClick = {
                             if (scannedPages.isNotEmpty()) {
+                                if (scannedPages.size == 1 && previewingExistingDoc != null) {
+                                    viewModel.deleteDocument(context, previewingExistingDoc!!)
+                                }
                                 viewModel.removeScannedPage(pagerState.currentPage)
                                 if (viewModel.scannedPages.value.isEmpty()) {
                                     onNavigateBack()
