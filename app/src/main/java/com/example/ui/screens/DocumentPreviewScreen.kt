@@ -88,6 +88,14 @@ fun DocumentPreviewScreen(
     var signaturePage by remember { mutableStateOf(-1) }
 
     val pagerState = rememberPagerState(pageCount = { scannedPages.size })
+
+    var previousPageCount by remember { mutableIntStateOf(scannedPages.size) }
+    LaunchedEffect(scannedPages.size) {
+        if (scannedPages.size > previousPageCount && scannedPages.isNotEmpty()) {
+            pagerState.scrollToPage(scannedPages.size - 1)
+        }
+        previousPageCount = scannedPages.size
+    }
     
     fun burnSignature(uri: Uri, sigBitmap: Bitmap, boxWidth: Float, boxHeight: Float, offset: Offset, effectiveScale: Float, rotationDegrees: Float, pageIndex: Int) {
         scope.launch(Dispatchers.IO) {
