@@ -52,7 +52,7 @@ fun HomeScreen(
     onNavigateToCrop: (Bitmap) -> Unit
 ) {
     val context = LocalContext.current
-    val documents by viewModel.documents.collectAsState()
+    val documents by viewModel.recentDocuments.collectAsState()
     val scannedPages by viewModel.scannedPages.collectAsState()
     val barcodeResult by viewModel.barcodeResult.collectAsState()
     val scope = rememberCoroutineScope()

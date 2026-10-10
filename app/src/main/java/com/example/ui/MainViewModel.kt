@@ -65,6 +65,9 @@ class MainViewModel @Inject constructor(
             SortType.NAME_DESC -> list.sortedByDescending { it.document.name }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    
+    val recentDocuments: StateFlow<List<com.example.data.DocumentWithPages>> = repository.allDocumentsWithPages
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Active multi-page scan state
     private val _scannedPages = MutableStateFlow<List<android.net.Uri>>(emptyList())
