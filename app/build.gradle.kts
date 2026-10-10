@@ -13,7 +13,7 @@ android {
   compileSdk = 35
 
   defaultConfig {
-    applicationId = "com.aistudio.smartscan.rkfzv"
+    applicationId = "com.scantopdf.aiscanner"
     minSdk = 34
     targetSdk = 35
     versionCode = 1
