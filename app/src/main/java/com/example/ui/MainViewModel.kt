@@ -238,7 +238,7 @@ class MainViewModel @Inject constructor(
                 val outputDir = context.getExternalFilesDir("ScannedDocuments") ?: context.filesDir
                 if (!outputDir.exists()) outputDir.mkdirs()
 
-                val sanitizedName = documentName.trim().ifEmpty { "SmartScan_${System.currentTimeMillis()}" }
+                val sanitizedName = documentName.trim().ifEmpty { "ScanToPDF_${System.currentTimeMillis()}" }
                 val targetFile = File(outputDir, "$sanitizedName.pdf")
 
                 // 1. Generate PDF

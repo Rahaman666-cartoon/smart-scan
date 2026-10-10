@@ -207,7 +207,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                         )
                     }
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("SmartScan AI", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Scan to PDF: AI Scanner App", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
                     Text("Version 2.0.0 (Pro)", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(

@@ -73,7 +73,7 @@ class SettingsManager(context: Context) {
 
 
     fun getUserName(): String {
-        return prefs.getString("user_name", "SmartScan Pro") ?: "SmartScan Pro"
+        return prefs.getString("user_name", "Scan to PDF Pro") ?: "Scan to PDF Pro"
     }
 
     fun setUserName(name: String) {

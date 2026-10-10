@@ -470,12 +470,12 @@ fun DocumentPreviewScreen(
                                     val source = android.graphics.ImageDecoder.createSource(context.contentResolver, currentUri)
                                     val bitmap = android.graphics.ImageDecoder.decodeBitmap(source)
                                     
-                                    val filename = "SmartScan_${System.currentTimeMillis()}.jpg"
+                                    val filename = "ScanToPDF_${System.currentTimeMillis()}.jpg"
                                     val contentValues = android.content.ContentValues().apply {
                                         put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, filename)
                                         put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
                                         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                                            put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_PICTURES + "/SmartScan")
+                                            put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_PICTURES + "/Scan to PDF")
                                         }
                                     }
                                     
