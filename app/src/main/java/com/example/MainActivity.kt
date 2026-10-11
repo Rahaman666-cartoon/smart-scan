@@ -70,26 +70,26 @@ class MainActivity : ComponentActivity() {
                 val scannerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
                     contract = androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult()
                 ) { result ->
-                    if (result.resultCode == android.app.Activity.RESULT_OK) {
-                        if (!isAppending && retakeIndex == -1) {
-                            viewModel.clearActiveSession()
-                        }
-                        val scanResult = com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult.fromActivityResultIntent(result.data)
-                        
-                        // Use an explicit index tracking variable to handle retake correctly
-                        var currentRetakeIndex = retakeIndex
-                        
-                        scanResult?.pages?.forEach { page ->
-                            try {
-                                val inputStream = contentResolver.openInputStream(page.imageUri)
-                                if (inputStream != null) {
+                    try {
+                        if (result.resultCode == android.app.Activity.RESULT_OK) {
+                            if (!isAppending && retakeIndex == -1) {
+                                viewModel.clearActiveSession()
+                            }
+                            val scanResult = com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult.fromActivityResultIntent(result.data)
+                            
+                            // Use an explicit index tracking variable to handle retake correctly
+                            var currentRetakeIndex = retakeIndex
+                            
+                            scanResult?.pages?.forEach { page ->
+                                try {
                                     val outputDir = java.io.File(filesDir, "CanonicalPages")
                                     if (!outputDir.exists()) outputDir.mkdirs()
                                     val outputFile = java.io.File(outputDir, "page_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(5)}.jpg")
-                                    val outputStream = java.io.FileOutputStream(outputFile)
-                                    inputStream.copyTo(outputStream)
-                                    inputStream.close()
-                                    outputStream.close()
+                                    contentResolver.openInputStream(page.imageUri)?.use { inputStream ->
+                                        java.io.FileOutputStream(outputFile).use { outputStream ->
+                                            inputStream.copyTo(outputStream)
+                                        }
+                                    }
                                     val newUri = android.net.Uri.fromFile(outputFile)
                                     
                                     if (currentRetakeIndex != -1) {
@@ -98,17 +98,18 @@ class MainActivity : ComponentActivity() {
                                     } else {
                                         viewModel.addScannedPage(newUri)
                                     }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
                                 }
-                            } catch (e: Exception) {
-                                e.printStackTrace()
+                            }
+                            if (scanResult?.pages?.isNotEmpty() == true) {
+                                if (!isAppending && retakeIndex == -1) {
+                                    navController.navigate("document_preview")
+                                }
                             }
                         }
-                        if (scanResult?.pages?.isNotEmpty() == true) {
-                            if (!isAppending && retakeIndex == -1) {
-                                navController.navigate("document_preview")
-                            }
-                        }
-                        // Reset states
+                    } finally {
+                        // Always reset states even if cancelled or failed
                         isAppending = false
                         retakeIndex = -1
                     }
@@ -119,9 +120,10 @@ class MainActivity : ComponentActivity() {
                     isAppending = append
                     retakeIndex = index
 
+                    val pageLimit = if (index != -1) 1 else 30
                     val options = com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.Builder()
                         .setGalleryImportAllowed(true)
-                        .setPageLimit(30)
+                        .setPageLimit(pageLimit)
                         .setResultFormats(
                             com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_JPEG,
                             com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_PDF
