@@ -81,44 +81,23 @@ class MainActivity : ComponentActivity() {
                         
                         scanResult?.pages?.forEach { page ->
                             try {
-                                val outputDir = java.io.File(filesDir, "CanonicalPages")
-                                if (!outputDir.exists()) outputDir.mkdirs()
-                                val outputFile = java.io.File(outputDir, "page_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(5)}.jpg")
-
-                                var processed = false
-                                contentResolver.openInputStream(page.imageUri)?.use { inputStream ->
-                                    val originalBitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
-                                    if (originalBitmap != null) {
-                                        val grayBitmap = com.example.utils.ImageUtils.applyFilter(
-                                            originalBitmap,
-                                            com.example.utils.ImageUtils.FilterType.GRAYSCALE
-                                        )
-                                        java.io.FileOutputStream(outputFile).use { out ->
-                                            grayBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 92, out)
-                                        }
-                                        if (grayBitmap != originalBitmap) {
-                                            grayBitmap.recycle()
-                                        }
-                                        originalBitmap.recycle()
-                                        processed = true
+                                val inputStream = contentResolver.openInputStream(page.imageUri)
+                                if (inputStream != null) {
+                                    val outputDir = java.io.File(filesDir, "CanonicalPages")
+                                    if (!outputDir.exists()) outputDir.mkdirs()
+                                    val outputFile = java.io.File(outputDir, "page_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(5)}.jpg")
+                                    val outputStream = java.io.FileOutputStream(outputFile)
+                                    inputStream.copyTo(outputStream)
+                                    inputStream.close()
+                                    outputStream.close()
+                                    val newUri = android.net.Uri.fromFile(outputFile)
+                                    
+                                    if (currentRetakeIndex != -1) {
+                                        viewModel.updateScannedPage(currentRetakeIndex, newUri)
+                                        currentRetakeIndex = -1 // Only replace one page, if scanner returns multiple, append the rest
+                                    } else {
+                                        viewModel.addScannedPage(newUri)
                                     }
-                                }
-
-                                if (!processed) {
-                                    // Fallback: direct stream copy if decode failed
-                                    contentResolver.openInputStream(page.imageUri)?.use { input ->
-                                        java.io.FileOutputStream(outputFile).use { output ->
-                                            input.copyTo(output)
-                                        }
-                                    }
-                                }
-
-                                val newUri = android.net.Uri.fromFile(outputFile)
-                                if (currentRetakeIndex != -1) {
-                                    viewModel.updateScannedPage(currentRetakeIndex, newUri)
-                                    currentRetakeIndex = -1 // Only replace one page, if scanner returns multiple, append the rest
-                                } else {
-                                    viewModel.addScannedPage(newUri)
                                 }
                             } catch (e: Exception) {
                                 e.printStackTrace()
