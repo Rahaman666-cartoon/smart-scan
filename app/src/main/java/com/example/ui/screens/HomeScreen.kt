@@ -58,11 +58,19 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
 
     var showSaveDialog by remember { mutableStateOf(false) }
-    var showProfileSheet by remember { mutableStateOf(false) }
     var documentNameInput by remember { mutableStateOf("") }
     var searchQuery by remember { mutableStateOf("") }
     val dateFormatter = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
     var showImportGuideDialog by remember { mutableStateOf(false) }
+
+    val currentHour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
+    val greeting = remember(currentHour) {
+        when (currentHour) {
+            in 4..11 -> "Good Morning,"
+            in 12..16 -> "Good Afternoon,"
+            else -> "Good Evening,"
+        }
+    }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -128,12 +136,11 @@ fun HomeScreen(
                 Column {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
                             Text(
-                                text = "Good Morning,",
+                                text = greeting,
                                 style = MaterialTheme.typography.titleMedium,
                                 color = Color.White.copy(alpha = 0.8f)
                             )
@@ -142,22 +149,6 @@ fun HomeScreen(
                                 style = MaterialTheme.typography.headlineLarge,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color.White
-                            )
-                        }
-                        // Premium Profile Avatar
-                        Box(
-                            modifier = Modifier
-                                .size(56.dp)
-                                .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.2f))
-                                .clickable { showProfileSheet = true },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.AccountCircle,
-                                contentDescription = "Profile",
-                                tint = Color.White,
-                                modifier = Modifier.size(36.dp)
                             )
                         }
                     }
@@ -612,208 +603,6 @@ fun HomeScreen(
                     Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Share", fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                }
-            }
-        }
-    }
-
-    if (showProfileSheet) {
-        val totalDocuments = documents.size
-        val totalPages = documents.sumOf { it.document.pageCount }
-        val totalSize = documents.sumOf { it.document.pdfSize }
-        
-        val userName by viewModel.settingsManager.userName.collectAsState()
-        val userAvatarIndex by viewModel.settingsManager.userAvatarIndex.collectAsState()
-        val qrCodesRead by viewModel.settingsManager.qrCodesRead.collectAsState()
-        
-        var isEditingName by remember { mutableStateOf(false) }
-        var tempName by remember { mutableStateOf(userName) }
-        
-        val avatarColors = listOf(
-            MaterialTheme.colorScheme.primary,
-            Color(0xFFE91E63), // Pink
-            Color(0xFF4CAF50), // Green
-            Color(0xFFFF9800), // Orange
-            Color(0xFF9C27B0)  // Purple
-        )
-        val currentAvatarColor = avatarColors[userAvatarIndex % avatarColors.size]
-
-        ModalBottomSheet(
-            onDismissRequest = { showProfileSheet = false },
-            containerColor = MaterialTheme.colorScheme.surface
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
-                    .padding(bottom = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Avatar
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .background(currentAvatarColor.copy(alpha = 0.1f), CircleShape)
-                        .padding(4.dp)
-                        .background(currentAvatarColor.copy(alpha = 0.2f), CircleShape)
-                        .clickable { 
-                            viewModel.settingsManager.setUserAvatarIndex((userAvatarIndex + 1) % avatarColors.size)
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.AccountCircle, contentDescription = "Change Avatar", tint = currentAvatarColor, modifier = Modifier.size(48.dp))
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                if (isEditingName) {
-                    OutlinedTextField(
-                        value = tempName,
-                        onValueChange = { tempName = it },
-                        singleLine = true,
-                        trailingIcon = {
-                            IconButton(onClick = { 
-                                viewModel.settingsManager.setUserName(tempName)
-                                isEditingName = false 
-                            }) {
-                                Icon(Icons.Default.Check, contentDescription = "Save")
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(0.8f)
-                    )
-                } else {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { isEditingName = true }) {
-                        Text(userName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Icon(Icons.Default.Edit, contentDescription = "Edit Name", modifier = Modifier.size(16.dp), tint = Color.Gray)
-                    }
-                }
-                
-                Text("Offline User", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-                
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Stats Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Docs Stat
-                    Card(
-                        modifier = Modifier.weight(1f).height(100.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        shape = RoundedCornerShape(20.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize().padding(8.dp),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(totalDocuments.toString(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
-                            Text("Documents", style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
-                    }
-
-                    // Pages Stat
-                    Card(
-                        modifier = Modifier.weight(1f).height(100.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        shape = RoundedCornerShape(20.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize().padding(8.dp),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(totalPages.toString(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = Color(0xFFE65100))
-                            Text("Total Pages", style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
-                    }
-
-                    // QR Stat
-                    Card(
-                        modifier = Modifier.weight(1f).height(100.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        shape = RoundedCornerShape(20.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize().padding(8.dp),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(qrCodesRead.toString(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = Color(0xFF4CAF50))
-                            Text("QRs Scanned", style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Storage Card
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(20.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Storage, contentDescription = null, tint = Color(0xFF43A047), modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text("Local Storage Used", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                            Spacer(modifier = Modifier.weight(1f))
-                            Text(formatSize(totalSize), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                        }
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        // Fake progress bar representing storage used relative to a 1GB limit threshold
-                        val maxStorage = 1024L * 1024L * 1024L // 1 GB
-                        val progress = (totalSize.toFloat() / maxStorage.toFloat()).coerceIn(0.01f, 1f)
-                        
-                        LinearProgressIndicator(
-                            progress = { progress },
-                            modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
-                            color = MaterialTheme.colorScheme.primary,
-                            trackColor = Color(0xFFE0E0E0),
-                        )
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            "App runs completely offline. Files are stored securely on your device.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray,
-                            lineHeight = 16.sp
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        OutlinedButton(
-                            onClick = { 
-                                Toast.makeText(context, "Storage optimized!", Toast.LENGTH_SHORT).show()
-                            },
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Default.CleaningServices, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Optimize Storage")
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-                
-                Button(
-                    onClick = { showProfileSheet = false },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                ) {
-                    Text("Close", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

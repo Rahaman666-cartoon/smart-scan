@@ -405,28 +405,31 @@ fun SettingsScreen(viewModel: MainViewModel) {
                         )
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // 3 Side-by-Side Interactive Cards
+                        // 3 Side-by-Side Interactive Cards (Equal & Uniform Sizing)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             PdfQualityCard(
-                                title = "Low (45%)",
-                                subtitle = "Smaller File",
+                                title = "Low",
+                                percentage = "45%",
+                                subtitle = "Small File",
                                 isSelected = pdfQuality == SettingsManager.PdfQuality.LOW,
                                 onClick = { viewModel.settingsManager.setPdfQuality(SettingsManager.PdfQuality.LOW) },
                                 modifier = Modifier.weight(1f)
                             )
                             PdfQualityCard(
-                                title = "Balanced (75%)",
-                                subtitle = "Recommended",
+                                title = "Balanced",
+                                percentage = "75%",
+                                subtitle = "Standard",
                                 isSelected = pdfQuality == SettingsManager.PdfQuality.MEDIUM,
                                 onClick = { viewModel.settingsManager.setPdfQuality(SettingsManager.PdfQuality.MEDIUM) },
                                 modifier = Modifier.weight(1f)
                             )
                             PdfQualityCard(
-                                title = "High (100%)",
-                                subtitle = "Max Clarity",
+                                title = "High",
+                                percentage = "100%",
+                                subtitle = "Maximum",
                                 isSelected = pdfQuality == SettingsManager.PdfQuality.HIGH,
                                 onClick = { viewModel.settingsManager.setPdfQuality(SettingsManager.PdfQuality.HIGH) },
                                 modifier = Modifier.weight(1f)
@@ -601,6 +604,7 @@ private fun ProfileStatItem(
 @Composable
 private fun PdfQualityCard(
     title: String,
+    percentage: String,
     subtitle: String,
     isSelected: Boolean,
     onClick: () -> Unit,
@@ -611,6 +615,7 @@ private fun PdfQualityCard(
 
     Surface(
         modifier = modifier
+            .height(94.dp)
             .clip(RoundedCornerShape(16.dp))
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
@@ -619,24 +624,36 @@ private fun PdfQualityCard(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 14.dp, horizontal = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .padding(vertical = 10.dp, horizontal = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                maxLines = 1
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = percentage,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray,
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.8f) else Color.Gray,
+                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.85f) else Color.Gray,
                 textAlign = TextAlign.Center,
-                fontSize = 11.sp
+                fontSize = 11.sp,
+                maxLines = 1
             )
         }
     }
