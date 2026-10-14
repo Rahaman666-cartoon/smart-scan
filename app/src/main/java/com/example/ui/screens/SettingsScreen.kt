@@ -456,8 +456,12 @@ fun SettingsScreen(viewModel: MainViewModel) {
                             title = "Privacy Policy",
                             subtitle = "100% on-device processing",
                             onClick = {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Rahaman666-cartoon/smart-scan"))
-                                context.startActivity(intent)
+                                try {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://sites.google.com/view/scantopdfaiscannerapp/home"))
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Could not open browser", Toast.LENGTH_SHORT).show()
+                                }
                             }
                         )
 
