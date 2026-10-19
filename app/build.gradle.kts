@@ -16,8 +16,8 @@ android {
     applicationId = "com.scantopdf.aiscanner"
     minSdk = 24
     targetSdk = 36
-    versionCode = 3
-    versionName = "1.0.2"
+    versionCode = 4
+    versionName = "1.0.3"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -111,7 +111,7 @@ dependencies {
   implementation(libs.okhttp)
   // implementation(libs.play.services.location)
   implementation(libs.retrofit)
-  implementation(libs.opencv)
+  // implementation(libs.opencv)
   
   // Added dependencies
   implementation(libs.hilt.android)

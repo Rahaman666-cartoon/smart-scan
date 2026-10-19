@@ -32,7 +32,6 @@ import androidx.navigation.compose.rememberNavController
 import com.example.ui.MainViewModel
 import com.example.ui.screens.*
 import com.example.ui.theme.SmartScanTheme
-import com.example.utils.OpenCvImageProcessor
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -42,15 +41,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
-        // Initialize OpenCV image processing runtime asynchronously so startup is instant
-        kotlin.concurrent.thread(start = true, isDaemon = true, name = "OpenCvInit") {
-            try {
-                OpenCvImageProcessor.init(applicationContext)
-            } catch (t: Throwable) {
-                t.printStackTrace()
-            }
-        }
 
         setContent {
             val viewModel: MainViewModel = hiltViewModel()
