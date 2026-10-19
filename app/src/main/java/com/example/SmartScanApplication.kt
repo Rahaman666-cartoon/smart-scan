@@ -8,7 +8,11 @@ import dagger.hilt.android.HiltAndroidApp
 class SmartScanApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        PDFBoxResourceLoader.init(applicationContext)
+        try {
+            PDFBoxResourceLoader.init(applicationContext)
+        } catch (t: Throwable) {
+            t.printStackTrace()
+        }
     }
 }
 

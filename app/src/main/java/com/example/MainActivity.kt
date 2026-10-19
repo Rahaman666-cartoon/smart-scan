@@ -43,8 +43,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Initialize OpenCV image processing runtime
-        OpenCvImageProcessor.init(applicationContext)
+        // Initialize OpenCV image processing runtime asynchronously so startup is instant
+        kotlin.concurrent.thread(start = true, isDaemon = true, name = "OpenCvInit") {
+            try {
+                OpenCvImageProcessor.init(applicationContext)
+            } catch (t: Throwable) {
+                t.printStackTrace()
+            }
+        }
 
         setContent {
             val viewModel: MainViewModel = hiltViewModel()

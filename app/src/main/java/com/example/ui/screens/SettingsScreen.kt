@@ -519,7 +519,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Version 1.0.0 • Offline & Secure",
+                        text = "Version ${com.example.BuildConfig.VERSION_NAME} • Offline & Secure",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )

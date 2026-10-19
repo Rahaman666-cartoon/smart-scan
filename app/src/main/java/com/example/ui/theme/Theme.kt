@@ -125,10 +125,17 @@ fun SmartScanTheme(
     val view = androidx.compose.ui.platform.LocalView.current
     if (!view.isInEditMode) {
         androidx.compose.runtime.SideEffect {
-            val window = (view.context as android.app.Activity).window
-            val insetsController = androidx.core.view.WindowCompat.getInsetsController(window, view)
-            insetsController.isAppearanceLightStatusBars = !darkTheme
-            insetsController.isAppearanceLightNavigationBars = !darkTheme
+            var ctx = view.context
+            while (ctx is android.content.ContextWrapper) {
+                if (ctx is android.app.Activity) break
+                ctx = ctx.baseContext
+            }
+            val activity = ctx as? android.app.Activity
+            activity?.window?.let { window ->
+                val insetsController = androidx.core.view.WindowCompat.getInsetsController(window, view)
+                insetsController.isAppearanceLightStatusBars = !darkTheme
+                insetsController.isAppearanceLightNavigationBars = !darkTheme
+            }
         }
     }
 
