@@ -480,7 +480,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                                     type = "text/plain"
                                     putExtra(
                                         Intent.EXTRA_TEXT,
-                                        "Check out Scan to PDF: AI Scanner App on Google Play! https://play.google.com/store/apps/details?id=com.scantopdf.aiscanner"
+                                        "Check out Scan to PDF: OCR Scanner on Google Play! https://play.google.com/store/apps/details?id=com.scantopdf.aiscanner"
                                     )
                                 }
                                 context.startActivity(Intent.createChooser(shareIntent, "Share App"))
@@ -513,7 +513,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Scan to PDF: AI Scanner App",
+                        text = "Scan to PDF: OCR Scanner",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
